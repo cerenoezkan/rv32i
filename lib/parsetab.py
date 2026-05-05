@@ -5,9 +5,15 @@ _tabversion = '3.8'
 
 _lr_method = 'LALR'
 
+<<<<<<< HEAD
 _lr_signature = 'D13CDAB84097EAD75B4C00E90837D8E4'
     
 _lr_action_items = {'LABEL':([0,5,16,20,],[3,8,19,26,]),'NEWLINE':([0,5,7,8,10,12,18,19,24,25,26,31,],[4,9,13,14,15,-14,22,23,28,29,30,32,]),'$end':([0,1,2,4,9,13,14,15,22,23,28,29,30,32,],[-4,0,-1,-3,-7,-2,-5,-6,-11,-12,-8,-9,-13,-10,]),'DIRECTIVE':([0,],[5,]),'OPCODE':([0,],[6,]),'COLUMN':([3,],[7,]),'IMMEDIATE':([5,16,20,],[10,18,25,]),'REGISTER':([6,16,20,21,],[12,12,12,12,]),'COMMA':([11,12,17,],[16,-14,20,]),'RPAREN':([12,27,],[-14,31,]),'LPAREN':([18,],[21,]),}
+=======
+_lr_signature = 'F8E8884AF0A58E5948D628EFC7FC3758'
+    
+_lr_action_items = {'LABEL':([0,14,18,],[3,17,24,]),'NEWLINE':([0,5,7,8,11,16,17,22,23,24,29,],[4,9,12,13,-13,20,21,26,27,28,30,]),'$end':([0,1,2,4,9,12,13,20,21,26,27,28,30,],[-4,0,-1,-3,-6,-2,-5,-10,-11,-7,-8,-12,-9,]),'DIRECTIVE':([0,],[5,]),'OPCODE':([0,],[6,]),'COLUMN':([3,],[7,]),'IMMEDIATE':([5,14,18,],[8,16,23,]),'REGISTER':([6,14,18,19,],[11,11,11,11,]),'COMMA':([10,11,15,],[14,-13,18,]),'RPAREN':([11,25,],[-13,29,]),'LPAREN':([16,],[19,]),}
+>>>>>>> 88de4df121fd7786f103226aacc10b977b96c0fa
 
 _lr_action = {}
 for _k, _v in _lr_action_items.items():
@@ -16,7 +22,11 @@ for _k, _v in _lr_action_items.items():
       _lr_action[_x][_k] = _y
 del _lr_action_items
 
+<<<<<<< HEAD
 _lr_goto_items = {'program':([0,],[1,]),'statement':([0,],[2,]),'register':([6,16,20,21,],[11,17,24,27,]),}
+=======
+_lr_goto_items = {'program':([0,],[1,]),'statement':([0,],[2,]),'register':([6,14,18,19,],[10,15,22,25,]),}
+>>>>>>> 88de4df121fd7786f103226aacc10b977b96c0fa
 
 _lr_goto = {}
 for _k, _v in _lr_goto_items.items():
@@ -30,6 +40,7 @@ _lr_productions = [
   ('program -> LABEL COLUMN NEWLINE','program',3,'p_program_label','parser.py',35),
   ('program -> NEWLINE','program',1,'p_program_empty','parser.py',45),
   ('program -> <empty>','program',0,'p_program_empty','parser.py',46),
+<<<<<<< HEAD
   ('statement -> DIRECTIVE LABEL NEWLINE','statement',3,'p_statement_directive_symbol','parser.py',60),
   ('statement -> DIRECTIVE IMMEDIATE NEWLINE','statement',3,'p_statement_directive_imm','parser.py',70),
   ('statement -> DIRECTIVE NEWLINE','statement',2,'p_statement_directive_single','parser.py',80),
@@ -41,4 +52,16 @@ _lr_productions = [
   ('statement -> OPCODE register COMMA register COMMA LABEL NEWLINE','statement',7,'p_statement_SB_LABEL','parser.py',207),
   ('register -> REGISTER','register',1,'p_register','parser.py',236),
   ('statement -> NEWLINE','statement',1,'p_statement_none','parser.py',249),
+=======
+  ('statement -> DIRECTIVE IMMEDIATE NEWLINE','statement',3,'p_statement_directive','parser.py',55),
+  ('statement -> DIRECTIVE NEWLINE','statement',2,'p_statement_directive_single','parser.py',64),
+  ('statement -> OPCODE register COMMA register COMMA register NEWLINE','statement',7,'p_statement_R','parser.py',78),
+  ('statement -> OPCODE register COMMA register COMMA IMMEDIATE NEWLINE','statement',7,'p_statement_I_S_SB','parser.py',96),
+  ('statement -> OPCODE register COMMA IMMEDIATE LPAREN register RPAREN NEWLINE','statement',8,'p_statement_load_store_offset','parser.py',127),
+  ('statement -> OPCODE register COMMA IMMEDIATE NEWLINE','statement',5,'p_statement_U_UJ','parser.py',152),
+  ('statement -> OPCODE register COMMA LABEL NEWLINE','statement',5,'p_statement_UJ_LABEL','parser.py',179),
+  ('statement -> OPCODE register COMMA register COMMA LABEL NEWLINE','statement',7,'p_statement_SB_LABEL','parser.py',192),
+  ('register -> REGISTER','register',1,'p_register','parser.py',221),
+  ('statement -> NEWLINE','statement',1,'p_statement_none','parser.py',234),
+>>>>>>> 88de4df121fd7786f103226aacc10b977b96c0fa
 ]
