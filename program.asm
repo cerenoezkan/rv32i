@@ -1,0 +1,8 @@
+.text
+addi x1, x0, 5
+addi x2, x0, 10
+add x3, x1, x2
+LOOP:
+addi x3, x3, 1
+beq x3, x2, LOOP
+             

@@ -1,0 +1,18 @@
+{
+    "header": {
+        "type": "RVI_OBJECT",
+        "version": 1,
+        "entry_point": 0,
+        "source_file": "main2.asm",
+        "instr_count": 2
+    },
+    "text": [
+        "002081B3",
+        "00118193"
+    ],
+    "data": [],
+    "symbols": {
+        "TOPLA": 0
+    },
+    "relocations": []
+}
