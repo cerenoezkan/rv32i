@@ -32,11 +32,7 @@ t_ignore = ' \t\r' #Boşluk, tab, ve carriage return karakterlerini görmezden g
 # 3. Fonksiyonel Kurallar (Kelime Tanıma)
 
 def t_DIRECTIVE(t): #(Yol Göstericiler)
-<<<<<<< HEAD
     r'\.(data|text|word|byte|org|end|space|global|external)' #Başında nokta (.) olan kelimeleri yakalar.
-=======
-    r'\.(data|text|word|byte|org|end|space|global|extern)' #Başında nokta (.) olan kelimeleri yakalar.
->>>>>>> 88de4df121fd7786f103226aacc10b977b96c0fa
     return t
 
 def t_REGISTER(t):
