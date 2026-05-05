@@ -1,12 +1,17 @@
 .text
 LED_WRITE:
-lui x3, 2
-addi x2, x2, 1
-sw x2, 0(x3)
-addi x4, x0, 1
-DELAY:
-addi x4, x4, 1
-addi x5, x0, 255
-beq x4, x5, LED_WRITE
-jal x0, DELAY
-
+    lui  x3, 2
+    addi x2, x2, 1
+    sw   x2, 0(x3)
+    addi x6, x0, 0
+DELAY_OUTER:
+    addi x7, x0, 0
+DELAY_INNER:
+    addi x7, x7, 1
+    addi x5, x0, 1000
+    bne  x7, x5, DELAY_INNER
+    addi x6, x6, 1
+    addi x5, x0, 1000
+    bne  x6, x5, DELAY_OUTER
+    jal  x0, LED_WRITE
+    

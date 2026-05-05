@@ -7,8 +7,6 @@ Rule 1     program -> statement
 Rule 2     program -> LABEL COLUMN NEWLINE
 Rule 3     program -> NEWLINE
 Rule 4     program -> <empty>
-<<<<<<< HEAD
-<<<<<<< HEAD
 Rule 5     statement -> DIRECTIVE LABEL NEWLINE
 Rule 6     statement -> DIRECTIVE IMMEDIATE NEWLINE
 Rule 7     statement -> DIRECTIVE NEWLINE
@@ -20,26 +18,10 @@ Rule 12    statement -> OPCODE register COMMA LABEL NEWLINE
 Rule 13    statement -> OPCODE register COMMA register COMMA LABEL NEWLINE
 Rule 14    register -> REGISTER
 Rule 15    statement -> NEWLINE
-=======
-Rule 5     statement -> DIRECTIVE IMMEDIATE NEWLINE
-=======
-Rule 5     statement -> DIRECTIVE LABEL NEWLINE
->>>>>>> a9c355a (update project)
-Rule 6     statement -> DIRECTIVE NEWLINE
-Rule 7     statement -> OPCODE register COMMA register COMMA register NEWLINE
-Rule 8     statement -> OPCODE register COMMA register COMMA IMMEDIATE NEWLINE
-Rule 9     statement -> OPCODE register COMMA IMMEDIATE LPAREN register RPAREN NEWLINE
-Rule 10    statement -> OPCODE register COMMA IMMEDIATE NEWLINE
-Rule 11    statement -> OPCODE register COMMA LABEL NEWLINE
-Rule 12    statement -> OPCODE register COMMA register COMMA LABEL NEWLINE
-Rule 13    register -> REGISTER
-Rule 14    statement -> NEWLINE
->>>>>>> 88de4df121fd7786f103226aacc10b977b96c0fa
 
 Terminals, with rules where they appear
 
 COLUMN               : 2
-<<<<<<< HEAD
 COMMA                : 8 8 9 9 10 11 12 13 13
 DIRECTIVE            : 5 6 7
 IMMEDIATE            : 6 9 10 11
@@ -49,27 +31,12 @@ NEWLINE              : 2 3 5 6 7 8 9 10 11 12 13 15
 OPCODE               : 8 9 10 11 12 13
 REGISTER             : 14
 RPAREN               : 10
-=======
-COMMA                : 7 7 8 8 9 10 11 12 12
-DIRECTIVE            : 5 6
-IMMEDIATE            : 8 9 10
-LABEL                : 2 5 11 12
-LPAREN               : 9
-NEWLINE              : 2 3 5 6 7 8 9 10 11 12 14
-OPCODE               : 7 8 9 10 11 12
-REGISTER             : 13
-RPAREN               : 9
->>>>>>> 88de4df121fd7786f103226aacc10b977b96c0fa
 error                : 
 
 Nonterminals, with rules where they appear
 
 program              : 0
-<<<<<<< HEAD
 register             : 8 8 8 9 9 10 10 11 12 13 13
-=======
-register             : 7 7 7 8 8 9 9 10 11 12 12
->>>>>>> 88de4df121fd7786f103226aacc10b977b96c0fa
 statement            : 1
 
 Parsing method: LALR
@@ -81,8 +48,6 @@ state 0
     (2) program -> . LABEL COLUMN NEWLINE
     (3) program -> . NEWLINE
     (4) program -> .
-<<<<<<< HEAD
-<<<<<<< HEAD
     (5) statement -> . DIRECTIVE LABEL NEWLINE
     (6) statement -> . DIRECTIVE IMMEDIATE NEWLINE
     (7) statement -> . DIRECTIVE NEWLINE
@@ -93,20 +58,6 @@ state 0
     (12) statement -> . OPCODE register COMMA LABEL NEWLINE
     (13) statement -> . OPCODE register COMMA register COMMA LABEL NEWLINE
     (15) statement -> . NEWLINE
-=======
-    (5) statement -> . DIRECTIVE IMMEDIATE NEWLINE
-=======
-    (5) statement -> . DIRECTIVE LABEL NEWLINE
->>>>>>> a9c355a (update project)
-    (6) statement -> . DIRECTIVE NEWLINE
-    (7) statement -> . OPCODE register COMMA register COMMA register NEWLINE
-    (8) statement -> . OPCODE register COMMA register COMMA IMMEDIATE NEWLINE
-    (9) statement -> . OPCODE register COMMA IMMEDIATE LPAREN register RPAREN NEWLINE
-    (10) statement -> . OPCODE register COMMA IMMEDIATE NEWLINE
-    (11) statement -> . OPCODE register COMMA LABEL NEWLINE
-    (12) statement -> . OPCODE register COMMA register COMMA LABEL NEWLINE
-    (14) statement -> . NEWLINE
->>>>>>> 88de4df121fd7786f103226aacc10b977b96c0fa
 
     LABEL           shift and go to state 3
     NEWLINE         shift and go to state 4
@@ -140,50 +91,27 @@ state 3
 state 4
 
     (3) program -> NEWLINE .
-<<<<<<< HEAD
     (15) statement -> NEWLINE .
-=======
-    (14) statement -> NEWLINE .
->>>>>>> 88de4df121fd7786f103226aacc10b977b96c0fa
 
   ! reduce/reduce conflict for $end resolved using rule 3 (program -> NEWLINE .)
     $end            reduce using rule 3 (program -> NEWLINE .)
 
-<<<<<<< HEAD
   ! $end            [ reduce using rule 15 (statement -> NEWLINE .) ]
-=======
-  ! $end            [ reduce using rule 14 (statement -> NEWLINE .) ]
->>>>>>> 88de4df121fd7786f103226aacc10b977b96c0fa
 
 
 state 5
 
-<<<<<<< HEAD
-<<<<<<< HEAD
     (5) statement -> DIRECTIVE . LABEL NEWLINE
     (6) statement -> DIRECTIVE . IMMEDIATE NEWLINE
     (7) statement -> DIRECTIVE . NEWLINE
 
     LABEL           shift and go to state 8
     IMMEDIATE       shift and go to state 10
-=======
-    (5) statement -> DIRECTIVE . IMMEDIATE NEWLINE
-    (6) statement -> DIRECTIVE . NEWLINE
-
-    IMMEDIATE       shift and go to state 8
->>>>>>> 88de4df121fd7786f103226aacc10b977b96c0fa
-=======
-    (5) statement -> DIRECTIVE . LABEL NEWLINE
-    (6) statement -> DIRECTIVE . NEWLINE
-
-    LABEL           shift and go to state 8
->>>>>>> a9c355a (update project)
     NEWLINE         shift and go to state 9
 
 
 state 6
 
-<<<<<<< HEAD
     (8) statement -> OPCODE . register COMMA register COMMA register NEWLINE
     (9) statement -> OPCODE . register COMMA register COMMA IMMEDIATE NEWLINE
     (10) statement -> OPCODE . register COMMA IMMEDIATE LPAREN register RPAREN NEWLINE
@@ -195,82 +123,37 @@ state 6
     REGISTER        shift and go to state 12
 
     register                       shift and go to state 11
-=======
-    (7) statement -> OPCODE . register COMMA register COMMA register NEWLINE
-    (8) statement -> OPCODE . register COMMA register COMMA IMMEDIATE NEWLINE
-    (9) statement -> OPCODE . register COMMA IMMEDIATE LPAREN register RPAREN NEWLINE
-    (10) statement -> OPCODE . register COMMA IMMEDIATE NEWLINE
-    (11) statement -> OPCODE . register COMMA LABEL NEWLINE
-    (12) statement -> OPCODE . register COMMA register COMMA LABEL NEWLINE
-    (13) register -> . REGISTER
-
-    REGISTER        shift and go to state 11
-
-    register                       shift and go to state 10
->>>>>>> 88de4df121fd7786f103226aacc10b977b96c0fa
 
 state 7
 
     (2) program -> LABEL COLUMN . NEWLINE
 
-<<<<<<< HEAD
     NEWLINE         shift and go to state 13
-=======
-    NEWLINE         shift and go to state 12
->>>>>>> 88de4df121fd7786f103226aacc10b977b96c0fa
 
 
 state 8
 
-<<<<<<< HEAD
-<<<<<<< HEAD
     (5) statement -> DIRECTIVE LABEL . NEWLINE
 
     NEWLINE         shift and go to state 14
-=======
-    (5) statement -> DIRECTIVE IMMEDIATE . NEWLINE
-=======
-    (5) statement -> DIRECTIVE LABEL . NEWLINE
->>>>>>> a9c355a (update project)
-
-    NEWLINE         shift and go to state 13
->>>>>>> 88de4df121fd7786f103226aacc10b977b96c0fa
 
 
 state 9
 
-<<<<<<< HEAD
     (7) statement -> DIRECTIVE NEWLINE .
 
     $end            reduce using rule 7 (statement -> DIRECTIVE NEWLINE .)
-=======
-    (6) statement -> DIRECTIVE NEWLINE .
-
-    $end            reduce using rule 6 (statement -> DIRECTIVE NEWLINE .)
->>>>>>> 88de4df121fd7786f103226aacc10b977b96c0fa
 
 
 state 10
 
-<<<<<<< HEAD
     (6) statement -> DIRECTIVE IMMEDIATE . NEWLINE
 
     NEWLINE         shift and go to state 15
-=======
-    (7) statement -> OPCODE register . COMMA register COMMA register NEWLINE
-    (8) statement -> OPCODE register . COMMA register COMMA IMMEDIATE NEWLINE
-    (9) statement -> OPCODE register . COMMA IMMEDIATE LPAREN register RPAREN NEWLINE
-    (10) statement -> OPCODE register . COMMA IMMEDIATE NEWLINE
-    (11) statement -> OPCODE register . COMMA LABEL NEWLINE
-    (12) statement -> OPCODE register . COMMA register COMMA LABEL NEWLINE
-
-    COMMA           shift and go to state 14
->>>>>>> 88de4df121fd7786f103226aacc10b977b96c0fa
 
 
 state 11
 
-<<<<<<< HEAD
     (8) statement -> OPCODE register . COMMA register COMMA register NEWLINE
     (9) statement -> OPCODE register . COMMA register COMMA IMMEDIATE NEWLINE
     (10) statement -> OPCODE register . COMMA IMMEDIATE LPAREN register RPAREN NEWLINE
@@ -279,18 +162,10 @@ state 11
     (13) statement -> OPCODE register . COMMA register COMMA LABEL NEWLINE
 
     COMMA           shift and go to state 16
-=======
-    (13) register -> REGISTER .
-
-    COMMA           reduce using rule 13 (register -> REGISTER .)
-    NEWLINE         reduce using rule 13 (register -> REGISTER .)
-    RPAREN          reduce using rule 13 (register -> REGISTER .)
->>>>>>> 88de4df121fd7786f103226aacc10b977b96c0fa
 
 
 state 12
 
-<<<<<<< HEAD
     (14) register -> REGISTER .
 
     COMMA           reduce using rule 14 (register -> REGISTER .)
@@ -300,14 +175,11 @@ state 12
 
 state 13
 
-=======
->>>>>>> 88de4df121fd7786f103226aacc10b977b96c0fa
     (2) program -> LABEL COLUMN NEWLINE .
 
     $end            reduce using rule 2 (program -> LABEL COLUMN NEWLINE .)
 
 
-<<<<<<< HEAD
 state 14
 
     (5) statement -> DIRECTIVE LABEL NEWLINE .
@@ -320,43 +192,10 @@ state 15
     (6) statement -> DIRECTIVE IMMEDIATE NEWLINE .
 
     $end            reduce using rule 6 (statement -> DIRECTIVE IMMEDIATE NEWLINE .)
-=======
-state 13
-
-    (5) statement -> DIRECTIVE LABEL NEWLINE .
-
-    $end            reduce using rule 5 (statement -> DIRECTIVE LABEL NEWLINE .)
-
-
-state 14
-
-    (7) statement -> OPCODE register COMMA . register COMMA register NEWLINE
-    (8) statement -> OPCODE register COMMA . register COMMA IMMEDIATE NEWLINE
-    (9) statement -> OPCODE register COMMA . IMMEDIATE LPAREN register RPAREN NEWLINE
-    (10) statement -> OPCODE register COMMA . IMMEDIATE NEWLINE
-    (11) statement -> OPCODE register COMMA . LABEL NEWLINE
-    (12) statement -> OPCODE register COMMA . register COMMA LABEL NEWLINE
-    (13) register -> . REGISTER
-
-    IMMEDIATE       shift and go to state 16
-    LABEL           shift and go to state 17
-    REGISTER        shift and go to state 11
-
-    register                       shift and go to state 15
-
-state 15
-
-    (7) statement -> OPCODE register COMMA register . COMMA register NEWLINE
-    (8) statement -> OPCODE register COMMA register . COMMA IMMEDIATE NEWLINE
-    (12) statement -> OPCODE register COMMA register . COMMA LABEL NEWLINE
-
-    COMMA           shift and go to state 18
->>>>>>> 88de4df121fd7786f103226aacc10b977b96c0fa
 
 
 state 16
 
-<<<<<<< HEAD
     (8) statement -> OPCODE register COMMA . register COMMA register NEWLINE
     (9) statement -> OPCODE register COMMA . register COMMA IMMEDIATE NEWLINE
     (10) statement -> OPCODE register COMMA . IMMEDIATE LPAREN register RPAREN NEWLINE
@@ -378,25 +217,10 @@ state 17
     (13) statement -> OPCODE register COMMA register . COMMA LABEL NEWLINE
 
     COMMA           shift and go to state 20
-=======
-    (9) statement -> OPCODE register COMMA IMMEDIATE . LPAREN register RPAREN NEWLINE
-    (10) statement -> OPCODE register COMMA IMMEDIATE . NEWLINE
-
-    LPAREN          shift and go to state 19
-    NEWLINE         shift and go to state 20
-
-
-state 17
-
-    (11) statement -> OPCODE register COMMA LABEL . NEWLINE
-
-    NEWLINE         shift and go to state 21
->>>>>>> 88de4df121fd7786f103226aacc10b977b96c0fa
 
 
 state 18
 
-<<<<<<< HEAD
     (10) statement -> OPCODE register COMMA IMMEDIATE . LPAREN register RPAREN NEWLINE
     (11) statement -> OPCODE register COMMA IMMEDIATE . NEWLINE
 
@@ -438,141 +262,59 @@ state 22
     (11) statement -> OPCODE register COMMA IMMEDIATE NEWLINE .
 
     $end            reduce using rule 11 (statement -> OPCODE register COMMA IMMEDIATE NEWLINE .)
-=======
-    (7) statement -> OPCODE register COMMA register COMMA . register NEWLINE
-    (8) statement -> OPCODE register COMMA register COMMA . IMMEDIATE NEWLINE
-    (12) statement -> OPCODE register COMMA register COMMA . LABEL NEWLINE
-    (13) register -> . REGISTER
-
-    IMMEDIATE       shift and go to state 23
-    LABEL           shift and go to state 24
-    REGISTER        shift and go to state 11
-
-    register                       shift and go to state 22
-
-state 19
-
-    (9) statement -> OPCODE register COMMA IMMEDIATE LPAREN . register RPAREN NEWLINE
-    (13) register -> . REGISTER
-
-    REGISTER        shift and go to state 11
-
-    register                       shift and go to state 25
-
-state 20
-
-    (10) statement -> OPCODE register COMMA IMMEDIATE NEWLINE .
-
-    $end            reduce using rule 10 (statement -> OPCODE register COMMA IMMEDIATE NEWLINE .)
-
-
-state 21
-
-    (11) statement -> OPCODE register COMMA LABEL NEWLINE .
-
-    $end            reduce using rule 11 (statement -> OPCODE register COMMA LABEL NEWLINE .)
-
-
-state 22
-
-    (7) statement -> OPCODE register COMMA register COMMA register . NEWLINE
-
-    NEWLINE         shift and go to state 26
->>>>>>> 88de4df121fd7786f103226aacc10b977b96c0fa
 
 
 state 23
 
-<<<<<<< HEAD
     (12) statement -> OPCODE register COMMA LABEL NEWLINE .
 
     $end            reduce using rule 12 (statement -> OPCODE register COMMA LABEL NEWLINE .)
-=======
-    (8) statement -> OPCODE register COMMA register COMMA IMMEDIATE . NEWLINE
-
-    NEWLINE         shift and go to state 27
->>>>>>> 88de4df121fd7786f103226aacc10b977b96c0fa
 
 
 state 24
 
-<<<<<<< HEAD
     (8) statement -> OPCODE register COMMA register COMMA register . NEWLINE
-=======
-    (12) statement -> OPCODE register COMMA register COMMA LABEL . NEWLINE
->>>>>>> 88de4df121fd7786f103226aacc10b977b96c0fa
 
     NEWLINE         shift and go to state 28
 
 
 state 25
 
-<<<<<<< HEAD
     (9) statement -> OPCODE register COMMA register COMMA IMMEDIATE . NEWLINE
 
     NEWLINE         shift and go to state 29
-=======
-    (9) statement -> OPCODE register COMMA IMMEDIATE LPAREN register . RPAREN NEWLINE
-
-    RPAREN          shift and go to state 29
->>>>>>> 88de4df121fd7786f103226aacc10b977b96c0fa
 
 
 state 26
 
-<<<<<<< HEAD
     (13) statement -> OPCODE register COMMA register COMMA LABEL . NEWLINE
 
     NEWLINE         shift and go to state 30
-=======
-    (7) statement -> OPCODE register COMMA register COMMA register NEWLINE .
-
-    $end            reduce using rule 7 (statement -> OPCODE register COMMA register COMMA register NEWLINE .)
->>>>>>> 88de4df121fd7786f103226aacc10b977b96c0fa
 
 
 state 27
 
-<<<<<<< HEAD
     (10) statement -> OPCODE register COMMA IMMEDIATE LPAREN register . RPAREN NEWLINE
 
     RPAREN          shift and go to state 31
-=======
-    (8) statement -> OPCODE register COMMA register COMMA IMMEDIATE NEWLINE .
-
-    $end            reduce using rule 8 (statement -> OPCODE register COMMA register COMMA IMMEDIATE NEWLINE .)
->>>>>>> 88de4df121fd7786f103226aacc10b977b96c0fa
 
 
 state 28
 
-<<<<<<< HEAD
     (8) statement -> OPCODE register COMMA register COMMA register NEWLINE .
 
     $end            reduce using rule 8 (statement -> OPCODE register COMMA register COMMA register NEWLINE .)
-=======
-    (12) statement -> OPCODE register COMMA register COMMA LABEL NEWLINE .
-
-    $end            reduce using rule 12 (statement -> OPCODE register COMMA register COMMA LABEL NEWLINE .)
->>>>>>> 88de4df121fd7786f103226aacc10b977b96c0fa
 
 
 state 29
 
-<<<<<<< HEAD
     (9) statement -> OPCODE register COMMA register COMMA IMMEDIATE NEWLINE .
 
     $end            reduce using rule 9 (statement -> OPCODE register COMMA register COMMA IMMEDIATE NEWLINE .)
-=======
-    (9) statement -> OPCODE register COMMA IMMEDIATE LPAREN register RPAREN . NEWLINE
-
-    NEWLINE         shift and go to state 30
->>>>>>> 88de4df121fd7786f103226aacc10b977b96c0fa
 
 
 state 30
 
-<<<<<<< HEAD
     (13) statement -> OPCODE register COMMA register COMMA LABEL NEWLINE .
 
     $end            reduce using rule 13 (statement -> OPCODE register COMMA register COMMA LABEL NEWLINE .)
@@ -590,11 +332,6 @@ state 32
     (10) statement -> OPCODE register COMMA IMMEDIATE LPAREN register RPAREN NEWLINE .
 
     $end            reduce using rule 10 (statement -> OPCODE register COMMA IMMEDIATE LPAREN register RPAREN NEWLINE .)
-=======
-    (9) statement -> OPCODE register COMMA IMMEDIATE LPAREN register RPAREN NEWLINE .
-
-    $end            reduce using rule 9 (statement -> OPCODE register COMMA IMMEDIATE LPAREN register RPAREN NEWLINE .)
->>>>>>> 88de4df121fd7786f103226aacc10b977b96c0fa
 
 WARNING: 
 WARNING: Conflicts:

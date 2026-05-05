@@ -4,22 +4,27 @@
         "version": 1,
         "entry_point": 0,
         "source_file": "led_func.asm",
-        "instr_count": 8
+        "instr_count": 12
     },
     "text": [
         "000021B7",
         "00110113",
         "0021A023",
-        "00100213",
-        "00120213",
-        "0FF00293",
-        "FE5204E3",
-        "FF5FF06F"
+        "00000313",
+        "00000393",
+        "00138393",
+        "3E800293",
+        "FE539CE3",
+        "00130313",
+        "3E800293",
+        "FE5314E3",
+        "FD5FF06F"
     ],
     "data": [],
     "symbols": {
         "LED_WRITE": 0,
-        "DELAY": 16
+        "DELAY_OUTER": 16,
+        "DELAY_INNER": 20
     },
     "relocations": []
 }

@@ -36,7 +36,7 @@ reg         mem_ready;
 wire [31:0] mem_addr;
 wire [31:0] mem_wdata;
 wire [ 3:0] mem_wstrb;
-reg  [31:0] mem_rdata;
+wire [31:0] mem_rdata;
 
 picorv32 #(
     .STACKADDR(32'h0000_0FFC),   // Stack → BRAM sonuna
@@ -81,38 +81,32 @@ wire led_sel = (mem_addr == 32'h0000_2000);
 // =========================================================
 // 5. Bellek arayüzü (tek döngülü)
 // =========================================================
+// Kombinasyonel okuma
+always @(*) begin
+    if (bram_sel)
+        mem_rdata = bram[mem_addr[11:2]];
+    else
+        mem_rdata = 32'h0000_0000;
+end
+
+// Senkron yazma + ready
 always @(posedge clk) begin
     mem_ready <= 0;
-
     if (mem_valid && !mem_ready) begin
-
-        // --- BRAM okuma / yazma ---
         if (bram_sel) begin
-            if (mem_wstrb == 4'b0000) begin
-                // Okuma
-                mem_rdata <= bram[mem_addr[11:2]];
-            end else begin
-                // Yazma (byte enable)
-                if (mem_wstrb[0]) bram[mem_addr[11:2]][ 7: 0] <= mem_wdata[ 7: 0];
-                if (mem_wstrb[1]) bram[mem_addr[11:2]][15: 8] <= mem_wdata[15: 8];
-                if (mem_wstrb[2]) bram[mem_addr[11:2]][23:16] <= mem_wdata[23:16];
-                if (mem_wstrb[3]) bram[mem_addr[11:2]][31:24] <= mem_wdata[31:24];
-            end
+            if (mem_wstrb[0]) bram[mem_addr[11:2]][ 7: 0] <= mem_wdata[ 7: 0];
+            if (mem_wstrb[1]) bram[mem_addr[11:2]][15: 8] <= mem_wdata[15: 8];
+            if (mem_wstrb[2]) bram[mem_addr[11:2]][23:16] <= mem_wdata[23:16];
+            if (mem_wstrb[3]) bram[mem_addr[11:2]][31:24] <= mem_wdata[31:24];
             mem_ready <= 1;
         end
-
-        // --- LED register yazma ---
         else if (led_sel && mem_wstrb != 4'b0000) begin
             led_reg   <= mem_wdata[15:0];
             mem_ready <= 1;
         end
-
-        // --- Tanımsız adres → hemen cevap ver ---
         else begin
-            mem_rdata <= 32'h0000_0000;
             mem_ready <= 1;
         end
-
     end
 end
 
