@@ -51,12 +51,17 @@ def p_program_empty(p):
 # DIRECTIVE
 # =========================================================
 
-def p_statement_directive(p):
-    'statement : DIRECTIVE IMMEDIATE NEWLINE'
+# =========================================================
+# GLOBAL / EXTERN DIRECTIVES
+# =========================================================
+
+def p_statement_directive_global_extern(p):
+    'statement : DIRECTIVE LABEL NEWLINE'
+    # .global TOPLA  veya  .extern TOPLA  gibi yapıları yakalar
     p[0] = {
         'type': 'directive',
         'directive': p[1],
-        'value': p[2],
+        'symbol': p[2],
         'lineno': p.lineno(1)
     }
 
