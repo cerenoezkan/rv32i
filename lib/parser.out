@@ -8,6 +8,7 @@ Rule 2     program -> LABEL COLUMN NEWLINE
 Rule 3     program -> NEWLINE
 Rule 4     program -> <empty>
 <<<<<<< HEAD
+<<<<<<< HEAD
 Rule 5     statement -> DIRECTIVE LABEL NEWLINE
 Rule 6     statement -> DIRECTIVE IMMEDIATE NEWLINE
 Rule 7     statement -> DIRECTIVE NEWLINE
@@ -21,6 +22,9 @@ Rule 14    register -> REGISTER
 Rule 15    statement -> NEWLINE
 =======
 Rule 5     statement -> DIRECTIVE IMMEDIATE NEWLINE
+=======
+Rule 5     statement -> DIRECTIVE LABEL NEWLINE
+>>>>>>> a9c355a (update project)
 Rule 6     statement -> DIRECTIVE NEWLINE
 Rule 7     statement -> OPCODE register COMMA register COMMA register NEWLINE
 Rule 8     statement -> OPCODE register COMMA register COMMA IMMEDIATE NEWLINE
@@ -48,8 +52,8 @@ RPAREN               : 10
 =======
 COMMA                : 7 7 8 8 9 10 11 12 12
 DIRECTIVE            : 5 6
-IMMEDIATE            : 5 8 9 10
-LABEL                : 2 11 12
+IMMEDIATE            : 8 9 10
+LABEL                : 2 5 11 12
 LPAREN               : 9
 NEWLINE              : 2 3 5 6 7 8 9 10 11 12 14
 OPCODE               : 7 8 9 10 11 12
@@ -78,6 +82,7 @@ state 0
     (3) program -> . NEWLINE
     (4) program -> .
 <<<<<<< HEAD
+<<<<<<< HEAD
     (5) statement -> . DIRECTIVE LABEL NEWLINE
     (6) statement -> . DIRECTIVE IMMEDIATE NEWLINE
     (7) statement -> . DIRECTIVE NEWLINE
@@ -90,6 +95,9 @@ state 0
     (15) statement -> . NEWLINE
 =======
     (5) statement -> . DIRECTIVE IMMEDIATE NEWLINE
+=======
+    (5) statement -> . DIRECTIVE LABEL NEWLINE
+>>>>>>> a9c355a (update project)
     (6) statement -> . DIRECTIVE NEWLINE
     (7) statement -> . OPCODE register COMMA register COMMA register NEWLINE
     (8) statement -> . OPCODE register COMMA register COMMA IMMEDIATE NEWLINE
@@ -151,6 +159,7 @@ state 4
 state 5
 
 <<<<<<< HEAD
+<<<<<<< HEAD
     (5) statement -> DIRECTIVE . LABEL NEWLINE
     (6) statement -> DIRECTIVE . IMMEDIATE NEWLINE
     (7) statement -> DIRECTIVE . NEWLINE
@@ -163,6 +172,12 @@ state 5
 
     IMMEDIATE       shift and go to state 8
 >>>>>>> 88de4df121fd7786f103226aacc10b977b96c0fa
+=======
+    (5) statement -> DIRECTIVE . LABEL NEWLINE
+    (6) statement -> DIRECTIVE . NEWLINE
+
+    LABEL           shift and go to state 8
+>>>>>>> a9c355a (update project)
     NEWLINE         shift and go to state 9
 
 
@@ -208,11 +223,15 @@ state 7
 state 8
 
 <<<<<<< HEAD
+<<<<<<< HEAD
     (5) statement -> DIRECTIVE LABEL . NEWLINE
 
     NEWLINE         shift and go to state 14
 =======
     (5) statement -> DIRECTIVE IMMEDIATE . NEWLINE
+=======
+    (5) statement -> DIRECTIVE LABEL . NEWLINE
+>>>>>>> a9c355a (update project)
 
     NEWLINE         shift and go to state 13
 >>>>>>> 88de4df121fd7786f103226aacc10b977b96c0fa
@@ -304,9 +323,9 @@ state 15
 =======
 state 13
 
-    (5) statement -> DIRECTIVE IMMEDIATE NEWLINE .
+    (5) statement -> DIRECTIVE LABEL NEWLINE .
 
-    $end            reduce using rule 5 (statement -> DIRECTIVE IMMEDIATE NEWLINE .)
+    $end            reduce using rule 5 (statement -> DIRECTIVE LABEL NEWLINE .)
 
 
 state 14

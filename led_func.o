@@ -1,0 +1,25 @@
+{
+    "header": {
+        "type": "RVI_OBJECT",
+        "version": 1,
+        "entry_point": 0,
+        "source_file": "led_func.asm",
+        "instr_count": 8
+    },
+    "text": [
+        "000021B7",
+        "00110113",
+        "0021A023",
+        "00100213",
+        "00120213",
+        "0FF00293",
+        "FE5204E3",
+        "FF5FF06F"
+    ],
+    "data": [],
+    "symbols": {
+        "LED_WRITE": 0,
+        "DELAY": 16
+    },
+    "relocations": []
+}
