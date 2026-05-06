@@ -1,23 +1,31 @@
 {
     "header": {
         "type": "RVI_OBJECT",
-        "version": 1,
+        "version": 2,
         "entry_point": 0,
         "source_file": "led_main.asm",
-        "instr_count": 3
+        "instr_count": 4
     },
     "text": [
-        "00100093",
-        "00000113",
-        "0000056F"
+        "00000000000000101010000010000011",
+        "00000000000000101010000100000011",
+        "00000000000000000000010101101111",
+        "11111111110111111111000001101111"
     ],
     "data": [],
-    "symbols": {},
+    "symbols": {
+        "MAIN_LOOP": 8
+    },
+    "exports": [],
+    "imports": [
+        "LED_WRITE"
+    ],
     "relocations": [
         {
             "symbol": "LED_WRITE",
             "address": 8,
             "type": "jal",
+            "extern": true,
             "rd": "x10"
         }
     ]

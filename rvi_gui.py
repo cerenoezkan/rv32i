@@ -5,10 +5,8 @@ import sys
 import time
 import threading
 
-# Mevcut modülleri içe aktarıyoruz
 try:
-    from lib.parser import parse_input, reset_lineno
-    from lib.object_writer import write_object_file
+    from lib.parser import parse_input
     from linker import link
     MODULES_LOADED = True
 except ImportError:
@@ -23,8 +21,8 @@ BG_CARD    = "#141720"
 BG_HOVER   = "#1c2030"
 BORDER     = "#1e2540"
 BORDER_LIT = "#2a3560"
-ACCENT     = "#00d4ff"       # Elektrik mavisi
-ACCENT2    = "#7c3aed"       # Mor
+ACCENT     = "#00d4ff"
+ACCENT2    = "#7c3aed"
 SUCCESS    = "#00e676"
 WARNING    = "#ffab00"
 DANGER     = "#ff1744"
@@ -68,15 +66,12 @@ class GlowButton(tk.Canvas):
         w, h = self.w, self.h
         fill  = self._hex_alpha(self.color, 0.18 if hover else 0.08)
         bord  = self.color if hover else self._hex_alpha(self.color, 0.5)
-        # Arkaplan dikdörtgeni
         self.create_rectangle(2, 2, w-2, h-2, fill=fill, outline=bord, width=1)
-        # Köşe aksan çizgileri
         cl = 8
         self.create_line(2, 2, 2+cl, 2, fill=self.color, width=2)
         self.create_line(2, 2, 2, 2+cl, fill=self.color, width=2)
         self.create_line(w-2, h-2, w-2-cl, h-2, fill=self.color, width=2)
         self.create_line(w-2, h-2, w-2, h-2-cl, fill=self.color, width=2)
-        # Metin
         fc = TEXT_PRI if hover else TEXT_SEC
         self.create_text(w//2, h//2, text=self.txt, fill=fc,
                          font=("Courier New", 9, "bold"))
@@ -139,7 +134,6 @@ class RVI_GUI:
         hdr.pack(fill=tk.X)
         hdr.pack_propagate(False)
 
-        # Sol: Logo + başlık
         left = tk.Frame(hdr, bg=BG_PANEL)
         left.pack(side=tk.LEFT, padx=24, fill=tk.Y)
 
@@ -158,7 +152,6 @@ class RVI_GUI:
                  fg=TEXT_SEC, bg=BG_PANEL,
                  font=("Courier New", 8)).pack(anchor="w")
 
-        # Orta: Durum göstergesi
         mid = tk.Frame(hdr, bg=BG_PANEL)
         mid.pack(side=tk.LEFT, expand=True)
         self.status_dot = tk.Canvas(mid, width=10, height=10, bg=BG_PANEL,
@@ -170,19 +163,17 @@ class RVI_GUI:
                                      font=("Courier New", 8, "bold"))
         self.status_label.pack(side=tk.LEFT)
 
-        # Sağ: Aksiyon butonları
         right = tk.Frame(hdr, bg=BG_PANEL)
         right.pack(side=tk.RIGHT, padx=20, fill=tk.Y)
 
         for txt, cmd, col in [
-            ("[ + ] DOSYA EKLE",    self.select_files, ACCENT),
+            ("[ + ] DOSYA EKLE",     self.select_files, ACCENT),
             ("[ ▶ ] DERLE & LINKLE", self.run_process,  SUCCESS),
-            ("[ ✕ ] TEMİZLE",       self.clear_all,    DANGER),
+            ("[ ✕ ] TEMİZLE",        self.clear_all,    DANGER),
         ]:
             btn = GlowButton(right, txt, cmd, color=col, width=165, height=36)
             btn.pack(side=tk.LEFT, padx=6, pady=17)
 
-        # Alt çizgi
         sep = tk.Canvas(self.root, height=1, bg=BORDER, highlightthickness=0)
         sep.pack(fill=tk.X)
 
@@ -193,7 +184,7 @@ class RVI_GUI:
         body.columnconfigure(1, weight=3)
         body.rowconfigure(0, weight=1)
 
-        # ── SOL PANEL: Dosya Yöneticisi ──────────────────────────────────
+        # ── SOL PANEL ────────────────────────────────────────────────────
         left_col = tk.Frame(body, bg=BG_PANEL, bd=0)
         left_col.grid(row=0, column=0, sticky="nsew", padx=(0, 10))
 
@@ -210,7 +201,6 @@ class RVI_GUI:
         )
         self.empty_label.pack(expand=True)
 
-        # İstatistik kartı
         stats_frame = tk.Frame(left_col, bg=BG_CARD, pady=8)
         stats_frame.pack(fill=tk.X, padx=8, pady=8)
         self._draw_stat_divider(stats_frame)
@@ -219,13 +209,12 @@ class RVI_GUI:
         self.stat_status = self._stat_item(stats_frame, "DURUM", "BEKLE")
         self._draw_stat_divider(stats_frame)
 
-        # ── SAĞ PANEL: Sekmeli Çıktı ─────────────────────────────────────
+        # ── SAĞ PANEL ─────────────────────────────────────────────────────
         right_col = tk.Frame(body, bg=BG_PANEL)
         right_col.grid(row=0, column=1, sticky="nsew")
 
         self._section_label(right_col, "ÇIKTI PANELİ")
 
-        # Özel sekme çubuğu
         tab_bar = tk.Frame(right_col, bg=BG_PANEL)
         tab_bar.pack(fill=tk.X, padx=8)
 
@@ -245,12 +234,13 @@ class RVI_GUI:
                            cursor="hand2")
             btn.pack(side=tk.LEFT)
             btn.bind("<Button-1>", lambda e, t=tab_id: self._switch_tab(t))
-            btn.bind("<Enter>", lambda e, b=btn: b.config(fg=TEXT_SEC) if b != self._tabs.get(self._cur_tab, {}).get("btn") else None)
-            btn.bind("<Leave>", lambda e, t2=tab_id, b=btn: b.config(fg=ACCENT if t2==self._cur_tab else TEXT_DIM))
+            btn.bind("<Enter>",  lambda e, b=btn: b.config(fg=TEXT_SEC)
+                     if b != self._tabs.get(self._cur_tab, {}).get("btn") else None)
+            btn.bind("<Leave>",  lambda e, t2=tab_id, b=btn:
+                     b.config(fg=ACCENT if t2 == self._cur_tab else TEXT_DIM))
             self._tabs[tab_id] = {"btn": btn}
 
-        # İçerikler
-        # LOG
+        # LOG sekmesi
         log_frame = tk.Frame(self.tab_content, bg=BG_DEEP)
         self.txt_log = tk.Text(log_frame, bg=BG_DEEP, fg=SUCCESS,
                                font=("Courier New", 9),
@@ -266,15 +256,14 @@ class RVI_GUI:
         self._tabs["log"]["frame"] = log_frame
         self._setup_log_tags()
 
-        # SYM TABLE
+        # SEMBOL TABLOSU sekmesi
         sym_frame = tk.Frame(self.tab_content, bg=BG_DEEP)
         style = ttk.Style()
         style.theme_use("clam")
         style.configure("Custom.Treeview",
                          background=BG_DEEP, foreground=TEXT_PRI,
                          fieldbackground=BG_DEEP, rowheight=30,
-                         font=("Courier New", 9),
-                         borderwidth=0)
+                         font=("Courier New", 9), borderwidth=0)
         style.configure("Custom.Treeview.Heading",
                          background=BG_CARD, foreground=ACCENT,
                          font=("Courier New", 9, "bold"),
@@ -283,10 +272,12 @@ class RVI_GUI:
                   background=[("selected", ACCENT2)],
                   foreground=[("selected", TEXT_PRI)])
 
-        cols = ("Symbol", "Address", "Status")
+        # Sütunlara "Kaynak Dosya" eklendi
+        cols = ("Symbol", "Address", "Scope", "Source", "Status")
         self.tree = ttk.Treeview(sym_frame, columns=cols, show="headings",
                                   style="Custom.Treeview")
-        for col, w in [("Symbol", 280), ("Address", 180), ("Status", 140)]:
+        for col, w in [("Symbol", 180), ("Address", 130), ("Scope", 90),
+                        ("Source", 160), ("Status", 100)]:
             self.tree.heading(col, text=col.upper())
             self.tree.column(col, anchor="center", width=w)
         sym_scroll = ttk.Scrollbar(sym_frame, command=self.tree.yview)
@@ -295,7 +286,7 @@ class RVI_GUI:
         self.tree.pack(fill=tk.BOTH, expand=True)
         self._tabs["sym"]["frame"] = sym_frame
 
-        # HEX
+        # HEX sekmesi
         hex_frame = tk.Frame(self.tab_content, bg=BG_DEEP)
         self.txt_hex = tk.Text(hex_frame, bg=BG_DEEP, fg=ACCENT,
                                font=("Courier New", 10, "bold"),
@@ -325,8 +316,8 @@ class RVI_GUI:
                  font=("Courier New", 7)).pack(side=tk.LEFT, padx=16, pady=6)
 
         self.bar_msg = tk.Label(bar, text="Sistem hazır.",
-                                 fg=TEXT_DIM, bg=BG_PANEL,
-                                 font=("Courier New", 7))
+                                fg=TEXT_DIM, bg=BG_PANEL,
+                                font=("Courier New", 7))
         self.bar_msg.pack(side=tk.RIGHT, padx=16, pady=6)
 
     # ── YARDIMCI UI ────────────────────────────────────────────────────────────
@@ -438,7 +429,6 @@ class RVI_GUI:
         self.root.update_idletasks()
 
     def _log_raw(self, text):
-        """Yakalanan stdout için"""
         self.txt_log.insert(tk.END, text, "info")
         self.txt_log.see(tk.END)
         self.root.update_idletasks()
@@ -451,8 +441,7 @@ class RVI_GUI:
 
         if not MODULES_LOADED:
             messagebox.showerror("Modül Hatası",
-                "lib.parser / lib.object_writer / linker modülleri bulunamadı.\n"
-                "Bu GUI prototip modunda çalışıyor.")
+                "lib.parser / linker modülleri bulunamadı.")
             return
 
         self._switch_tab("log")
@@ -469,57 +458,101 @@ class RVI_GUI:
 
         try:
             self._log("─" * 60, "dim")
-            self._log("  RVI RV32I LINKER — AKADEMİK ANALİZ RAPORU", "header")
+            self._log("  RVI RV32I LINKER — İŞLEM RAPORU", "header")
             self._log("─" * 60, "dim")
 
             obj_files = []
 
-            # ASSEMBLE
+            # ── ASSEMBLE AŞAMASI ──────────────────────────────────────────
             self._log("\n▶ ASSEMBLE AŞAMASI", "header")
             for asm_file in self.files_to_process:
                 name = os.path.basename(asm_file)
                 self._log(f"  Derleniyor: {name}", "info")
-                res = parse_input(asm_file, hex=True)
-                obj_file = write_object_file(
-                    asm_file, res['text'], res['data'],
-                    res['symbols'], res['relocations']
-                )
-                obj_files.append(obj_file)
-                self._log(f"  ✓ {name} → {os.path.basename(obj_file)}", "success")
 
-            # LINKING
+                res = parse_input(asm_file)
+
+                obj_file = os.path.splitext(asm_file)[0] + ".o"
+                obj_files.append(obj_file)
+
+                exports = res.get('exports', [])
+                imports = res.get('imports', [])
+                self._log(f"  ✓ {name} → {os.path.basename(obj_file)}", "success")
+                if exports:
+                    self._log(f"    exports: {exports}", "info")
+                if imports:
+                    self._log(f"    imports: {imports}", "info")
+                if res['relocations']:
+                    syms = [r['symbol'] for r in res['relocations']]
+                    self._log(f"    relocations: {syms}", "warn")
+
+            # ── LINKING AŞAMASI ───────────────────────────────────────────
             self._log("\n▶ LINKING AŞAMASI", "header")
-            self._log("  Relocation çözülüyor...", "info")
-            output_hex = "output.hex"
-            merged_symbols = link(
+            output_hex = os.path.join(
+                os.path.dirname(self.files_to_process[0]), "output.hex"
+            )
+
+            # link() artık üç değer döndürüyor:
+            # global_symbols, all_symbols (lokal dahil), symbol_scopes
+            global_symbols, all_symbols, symbol_scopes = link(
                 object_files=obj_files,
                 output_path=output_hex,
                 hex_mode=True
             )
 
-            # Sembol tablosu
+            # ── SEMBOL TABLOSU ────────────────────────────────────────────
+            # all_symbols: tüm semboller (lokal + global)
+            # symbol_scopes: {sym: ('GLOBAL'/'LOCAL', kaynak_dosya)}
             self._switch_tab("sym")
-            for sym, addr in merged_symbols.items():
-                self.tree.insert("", tk.END, values=(sym, f"0x{addr:08X}", "RESOLVED"))
+            for item in self.tree.get_children():
+                self.tree.delete(item)
 
-            # HEX çıktı
+            # Önce GLOBAL semboller, sonra LOCAL semboller (sıralı görünüm)
+            def sort_key(sym):
+                scope, _ = symbol_scopes.get(sym, ('LOCAL', ''))
+                return (0 if scope == 'GLOBAL' else 1, sym)
+
+            for sym in sorted(all_symbols.keys(), key=sort_key):
+                addr  = all_symbols[sym]
+                scope, src_file = symbol_scopes.get(sym, ('LOCAL', '?'))
+                status = "RESOLVED" if scope == 'GLOBAL' else "LOCAL"
+                self.tree.insert("", tk.END,
+                                 values=(sym, f"0x{addr:08X}", scope, src_file, status))
+
+            # ── HEX ÇIKTI ─────────────────────────────────────────────────
             with open(output_hex, 'r') as hf:
                 hex_content = hf.read()
+            self.txt_hex.delete("1.0", tk.END)
             self.txt_hex.insert(tk.END, hex_content)
             self._switch_tab("hex")
 
-            self._log("\n✓ Linkleme başarıyla tamamlandı.", "success")
-            self._log(f"  Program boyutu: {len(hex_content.splitlines()) * 4} Byte", "info")
+            instr_lines = [l for l in hex_content.splitlines()
+                           if l and not l.startswith('//') and not l.startswith('@')]
+            byte_count  = len(instr_lines) * 4
+
+            self._log(f"\n✓ Linkleme başarıyla tamamlandı.", "success")
+            self._log(f"  Program boyutu  : {byte_count} Byte ({len(instr_lines)} komut)", "info")
+            self._log(f"  Toplam sembol   : {len(all_symbols)} ({len(global_symbols)} global, "
+                      f"{len(all_symbols) - len(global_symbols)} lokal)", "info")
+            self._log(f"  Global semboller: {list(global_symbols.keys())}", "info")
+            self._log(f"  Çıktı dosyası   : {output_hex}", "info")
 
             self.stat_status.config(text="TAMAM", fg=SUCCESS)
-            self.bar_msg.config(text=f"Linkleme tamamlandı · {len(merged_symbols)} sembol çözüldü.")
-            messagebox.showinfo("Başarılı", "Linkleme başarıyla tamamlandı!")
+            self.bar_msg.config(
+                text=f"Linkleme tamamlandı · {len(instr_lines)} komut · "
+                     f"{len(all_symbols)} sembol ({len(global_symbols)} global)"
+            )
+            messagebox.showinfo("Başarılı",
+                f"Linkleme tamamlandı!\n"
+                f"Komut sayısı   : {len(instr_lines)}\n"
+                f"Toplam sembol  : {len(all_symbols)}\n"
+                f"Global sembol  : {len(global_symbols)}\n"
+                f"Çıktı          : {os.path.basename(output_hex)}")
 
         except Exception as e:
             self._switch_tab("log")
             self._log(f"\n✕ HATA: {str(e)}", "error")
             self.stat_status.config(text="HATA", fg=DANGER)
-            self.bar_msg.config(text=f"Hata: {str(e)[:60]}")
+            self.bar_msg.config(text=f"Hata: {str(e)[:80]}")
             messagebox.showerror("Sistem Hatası", str(e))
 
         finally:

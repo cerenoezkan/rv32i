@@ -1,59 +1,55 @@
-# AYIKLAMA MAKİNESİ - add, x1, loop:, , gibi ifadeleri birbirinden ayırır. 
+# tokenizer.py - lib/ klasorune koy
+# AYIKLAMA MAKİNESİ - add, x1, loop:, , gibi ifadeleri birbirinden ayırır.
 import ply.lex as lex
 from lib.machinecodeconst import MachineCodeConst
-
 mcc = MachineCodeConst()
 
-# 1. TOKEN LİSTESİ: 
-#Program bir kelime gördüğünde ona bu listeden bir isim takmak zorundadır.
-#Sen add yazarsan program ona OPCODE etiketi yapıştırır. x1 yazarsan REGISTER etiketi yapıştırır.
+# 1. TOKEN LİSTESİ
 tokens = (
-    'DIRECTIVE', 
-    'OPCODE',    
-    'LABEL',     
-    'REGISTER',  
-    'COMMA',     
-    'IMMEDIATE', 
-    'NEWLINE',   
+    'DIRECTIVE',
+    'OPCODE',
+    'LABEL',
+    'REGISTER',
+    'COMMA',
+    'IMMEDIATE',
+    'NEWLINE',
     'COLUMN',
-    'LPAREN',    
-    'RPAREN'     
+    'LPAREN',
+    'RPAREN'
 )
 
 # 2. REGEX TANIMLARI - Basit Kurallar
-#Bunlar tek karakterlik basit eşleşmelerdir.
-#r harfi "Raw String" demektir, yani "içerideki karakteri olduğu gibi gör" der.
-t_COMMA = r',' 
+t_COMMA  = r','
 t_COLUMN = r':'
-t_LPAREN = r'\(' 
-t_RPAREN = r'\)' 
-t_ignore = ' \t\r' #Boşluk, tab, ve carriage return karakterlerini görmezden gelir. Yani bunları kelime olarak tanımaz, sadece kelimeleri birbirinden ayırmak için kullanır.
+t_LPAREN = r'\('
+t_RPAREN = r'\)'
+t_ignore = ' \t\r'
 
-# 3. Fonksiyonel Kurallar (Kelime Tanıma)
+# 3. Fonksiyonel Kurallar
 
-def t_DIRECTIVE(t): #(Yol Göstericiler)
-    r'\.(data|text|word|byte|org|end|space|global|external)' #Başında nokta (.) olan kelimeleri yakalar.
+def t_DIRECTIVE(t):
+    # DÜZELTİLDİ: globl, extern, external eklendi
+    r'\.(data|text|word|byte|org|end|space|globl|global|extern|external|bss)'
     return t
 
 def t_REGISTER(t):
-    r'x[0-9][0-9]?' #Mantık: x harfiyle başlayan ve peşinden 1 veya 2 rakam gelen her şeyi yakalar (x0, x1, x31 gibi).
+    r'x[0-9][0-9]?'
     return t
 
 def t_IMMEDIATE(t):
-    r'[+-]?[0-9]+' #Mantık: Başında artı veya eksi olabilen ([+-]?), en az bir rakamdan oluşan ([0-9]+) tam sayıları yakalar.
+    r'[+-]?[0-9]+'
     return t
 
-def t_OPCODE(t): #Opcode vs Label Ayrımı (En Önemli Yer!)
+def t_OPCODE(t):
     r'[a-zA-Z_][a-zA-Z_0-9]*'
-    # Hash Table Kontrolü
-    if t.value in mcc.ALL_INSTR: #Opcode Table'a (yani mcc.ALL_INSTR listesine) bakıyor.
+    if t.value in mcc.ALL_INSTR:
         t.type = "OPCODE"
     else:
-        t.type = "LABEL" 
+        t.type = "LABEL"
     return t
-#Hata ve Yorum Satırları:
+
 def t_COMMENT(t):
-    r'\#.*' # # işaretinden sonra satır sonuna kadar ne yazılırsa yazılsın program bunu çöpe atar.
+    r'\#.*'
     pass
 
 def t_NEWLINE(t):
@@ -62,7 +58,6 @@ def t_NEWLINE(t):
     return t
 
 def t_error(t):
-    # Hata yakalama
     print(f"Hatalı Karakter Tespit Edildi: '{t.value[0]}' - Satır: {t.lexer.lineno}")
     t.lexer.skip(1)
 

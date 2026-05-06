@@ -126,19 +126,33 @@ def assemble_and_link(infiles, args):
     print(f"Linkleniyor: {' + '.join(obj_files)}")
     print(f"{'='*50}")
 
-    merged_symbols = link(
+    # link() üç değer döndürür: global_symbols, all_symbols, symbol_scopes
+    global_symbols, all_symbols, symbol_scopes = link(
         object_files=obj_files,
         output_path=args.outfile,
         hex_mode=args.hex,
     )
 
     # 3. Özet
+    local_count  = len(all_symbols) - len(global_symbols)
     print(f"\n{'='*50}")
     print(f"Tamamlandı!")
-    print(f"  Girdi    : {', '.join(infiles)}")
-    print(f"  Çıktı    : {args.outfile}")
-    print(f"  Semboller: {merged_symbols}")
+    print(f"  Girdi         : {', '.join(infiles)}")
+    print(f"  Çıktı         : {args.outfile}")
+    print(f"  Toplam sembol : {len(all_symbols)} ({len(global_symbols)} global, {local_count} lokal)")
+    print(f"  Global semb.  : {list(global_symbols.keys())}")
     print(f"{'='*50}")
+
+    # Sembol tablosu (--echo-symbols ile)
+    if args.echo_symbols and all_symbols:
+        print(f"\n=== Birleşik Sembol Tablosu ===")
+        print(f"  {'Label':<16} {'Adres':<10} {'Hex':<12} {'Kapsam':<8} Kaynak")
+        print(f"  {'-'*60}")
+        for sym in sorted(all_symbols.keys(),
+                          key=lambda s: (0 if symbol_scopes.get(s, ('LOCAL',''))[0] == 'GLOBAL' else 1, s)):
+            addr  = all_symbols[sym]
+            scope, src = symbol_scopes.get(sym, ('LOCAL', '?'))
+            print(f"  {sym:<16} {addr:<10} 0x{addr:08X}   {scope:<8} {src}")
 
 
 # =========================================================

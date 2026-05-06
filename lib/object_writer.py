@@ -5,9 +5,11 @@
 # Format  (.o  →  JSON içerik):
 #   {
 #     "header":      { type, version, entry_point },
-#     "text":        [ "01001011...", ... ],   # 32-bit binary string listesi
-#     "data":        [ { "address": int, "value": "..." }, ... ],
+#     "text":        [ "01001011...", ... ],
+#     "data":        [ "...", ... ],
 #     "symbols":     { "LOOP": 8, "START": 0, ... },
+#     "exports":     [ "LED_WRITE", ... ],   <-- .globl ile işaretlenenler
+#     "imports":     [ "FUNC_B", ... ],      <-- .extern ile işaretlenenler
 #     "relocations": [
 #         { "symbol": "FUNC_B", "address": 12, "type": "jal", "rd": "x1" },
 #         ...
@@ -18,7 +20,7 @@
 import json
 import os
 
-OBJECT_FORMAT_VERSION = 1
+OBJECT_FORMAT_VERSION = 2          # exports/imports eklendi → versiyon arttı
 OBJECT_FORMAT_TYPE    = "RVI_OBJECT"
 
 
@@ -27,7 +29,8 @@ OBJECT_FORMAT_TYPE    = "RVI_OBJECT"
 # =========================================================
 
 def write_object_file(filename, text_section, data_section,
-                      symbol_table, relocation_table):
+                      symbol_table, relocation_table,
+                      exports=None, imports=None):
     """
     Assembler çıktısını .o (JSON) formatında diske yazar.
 
@@ -35,9 +38,11 @@ def write_object_file(filename, text_section, data_section,
         filename         : kaynak .asm dosyasının adı  ("main.asm")
                            → çıktı: "main.o"
         text_section     : ['01001011...', ...]
-        data_section     : [{'address': int, 'value': '...'}, ...]
+        data_section     : ['...', ...]
         symbol_table     : {'LOOP': 8, 'START': 0}
         relocation_table : [{'symbol': 'X', 'address': 4, 'type': 'jal', ...}]
+        exports          : ['LED_WRITE', ...]  (.globl ile işaretlenenler)
+        imports          : ['FUNC_B', ...]     (.extern ile işaretlenenler)
 
     Dönüş:
         output_filename  : yazılan dosyanın tam yolu (str)
@@ -55,6 +60,8 @@ def write_object_file(filename, text_section, data_section,
         "text":        text_section,
         "data":        data_section,
         "symbols":     symbol_table,
+        "exports":     exports  if exports  is not None else [],
+        "imports":     imports  if imports  is not None else [],
         "relocations": relocation_table,
     }
 
@@ -64,7 +71,8 @@ def write_object_file(filename, text_section, data_section,
     print(f"--- Nesne Dosyası Oluşturuldu: {output_filename} "
           f"({len(text_section)} komut, "
           f"{len(symbol_table)} sembol, "
-          f"{len(relocation_table)} relocation) ---")
+          f"{len(relocation_table)} relocation, "
+          f"exports={exports or []}, imports={imports or []}) ---")
 
     return output_filename
 
@@ -83,12 +91,10 @@ def read_object_file(filename):
           'text':        [...],
           'data':        [...],
           'symbols':     {...},
+          'exports':     [...],
+          'imports':     [...],
           'relocations': [...],
         }
-
-    Hata durumları:
-        - Dosya bulunamazsa  → FileNotFoundError
-        - Format geçersizse  → ValueError
     """
     if not os.path.isfile(filename):
         raise FileNotFoundError(f"Object dosyası bulunamadı: '{filename}'")
@@ -100,36 +106,37 @@ def read_object_file(filename):
             raise ValueError(f"'{filename}' geçerli bir JSON değil: {e}")
 
     _validate_object(obj, filename)
+
+    # Eski format uyumluluğu (versiyon 1 — exports/imports yoksa boş ekle)
+    obj.setdefault("exports", [])
+    obj.setdefault("imports", [])
+
     return obj
 
 
 # =========================================================
-# DOĞRULAMA  (okuma sonrası kontrol)
+# DOĞRULAMA
 # =========================================================
 
 def _validate_object(obj, filename):
-    """
-    Okunan nesne dosyasının beklenen alanlara sahip olduğunu kontrol eder.
-    Eksik ya da yanlış format varsa ValueError fırlatır.
-    """
     required_keys = ("header", "text", "data", "symbols", "relocations")
     for key in required_keys:
         if key not in obj:
             raise ValueError(
-                f"'{filename}' bozuk: '{key}' alanı eksik. "
-                f"Bu dosya write_object_file() ile oluşturulmuş mu?"
+                f"'{filename}' bozuk: '{key}' alanı eksik."
             )
 
     header = obj["header"]
     if header.get("type") != OBJECT_FORMAT_TYPE:
         raise ValueError(
             f"'{filename}' tanınan bir RVI nesne dosyası değil "
-            f"(type='{header.get('type')}' beklenen='{OBJECT_FORMAT_TYPE}')"
+            f"(type='{header.get('type')}')"
         )
-    if header.get("version") != OBJECT_FORMAT_VERSION:
+    # Versiyon 1 de kabul et (geriye dönük uyumluluk)
+    if header.get("version") not in (1, 2):
         raise ValueError(
             f"'{filename}' sürüm uyumsuzluğu: "
-            f"dosya v{header.get('version')}, beklenen v{OBJECT_FORMAT_VERSION}"
+            f"dosya v{header.get('version')}, beklenen v1 veya v2"
         )
 
 
@@ -146,7 +153,6 @@ def _asm_to_obj(filename):
 def print_object_info(filename):
     """
     .o dosyasının özetini terminale basar.
-    Debug ve rapor için kullanışlıdır.
     """
     obj = read_object_file(filename)
     h   = obj["header"]
@@ -155,6 +161,8 @@ def print_object_info(filename):
     print(f"  Komut sayısı: {h.get('instr_count', len(obj['text']))}")
     print(f"  Entry point : 0x{h.get('entry_point', 0):04X}")
     print(f"  Semboller   : {list(obj['symbols'].keys())}")
+    print(f"  Exports     : {obj.get('exports', [])}")
+    print(f"  Imports     : {obj.get('imports', [])}")
     print(f"  Relocationlar:")
     if obj["relocations"]:
         for r in obj["relocations"]:
