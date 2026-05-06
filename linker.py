@@ -23,13 +23,7 @@ from lib.parser import encode_offset, get_imm_I, get_imm_SB, get_imm_UJ
 
 mcc = MachineCodeConst()
 
-MEMORY_MAP = {
-    "text": 0x00000000,
-    "data": 0x10000000
-}
-
-TEXT_BASE = MEMORY_MAP["text"]
-DATA_BASE = MEMORY_MAP["data"]
+TEXT_BASE = 0x00000000  # FPGA BRAM başlangıç adresi
 
 
 # =========================================================
@@ -72,51 +66,56 @@ def _to_output(binary_str, hex_mode):
 # =========================================================
 
 def load_and_merge(object_files):
-    merged_text = []
-    merged_data = []
-    merged_symbols = {}
-    merged_relocs = []
-    file_offsets = {}
+    """
+    Tüm .o dosyalarını okur ve sırayla birleştirir.
 
-    current_text_addr = TEXT_BASE
-    current_data_addr = DATA_BASE # Data başlangıcını takip et
+    Dönüş:
+        merged_text      : ['01001011...', ...]  (tüm komutlar sırayla)
+        merged_symbols   : {'LOOP': 8, 'FUNC': 48, ...}  (global adresler)
+        merged_relocs    : [{'symbol':..., 'address':..., 'type':...}, ...]
+        file_offsets     : {'main1.o': 0, 'main2.o': 48, ...}
+    """
+    merged_text    = []
+    merged_symbols = {}
+    merged_relocs  = []
+    file_offsets   = {}
+
+    current_address = TEXT_BASE
 
     for obj_file in object_files:
+        print(f"\n[+] Yükleniyor: {obj_file}")
         obj = read_object_file(obj_file)
-        
-        # --- TEXT Sembolleri ---
-        # (Mevcut sembol döngünü koru ama 'data' mı 'text' mi kontrolü ekle)
+
+        base_addr = current_address
+        file_offsets[obj_file] = base_addr
+
+        # --- Sembolleri global tabloya ekle ---
         for sym, addr in obj['symbols'].items():
-            # Basit bir mantık: Eğer obje dosyasında sembolün adresi 
-            # text boyutundan büyükse veya özel bir işaret varsa data'dır.
-            # Şimdilik en güvenli yol: Obj içindeki sembolün tipine bakmak.
-            # Eğer tip ayrımı yoksa, text içine eklemeye devam et ama 
-            # verilerin adreslerini DATA_BASE'e göre kaydırdığından emin ol.
-            
-            # Öneri: Obj dosyasını oluşturan parser'da sembollerin 
-            # hangi section'da olduğunu ('text' veya 'data') belirtmesini sağla.
-            section = obj.get('symbol_sections', {}).get(sym, 'text')
-            
-            if section == 'data':
-                global_addr = addr + current_data_addr
-            else:
-                global_addr = addr + current_text_addr
-                
+            global_addr = addr + base_addr
+            if sym in merged_symbols:
+                raise Exception(
+                    f"HATA: '{sym}' sembolü birden fazla dosyada tanımlı!\n"
+                    f"  İlk tanım : 0x{merged_symbols[sym]:04X}\n"
+                    f"  Çakışan   : {obj_file} → 0x{global_addr:04X}"
+                )
             merged_symbols[sym] = global_addr
+            print(f"    Sembol: {sym} → 0x{global_addr:04X}")
 
-        # --- DATA Bölümünü Birleştir ---
-        for d in obj.get('data', []):
-            merged_data.append(d)
-        
-        # Dosya offsetlerini kaydet (Debug için önemli)
-        file_offsets[obj_file] = current_text_addr
-        
-        # Her dosyadan sonra text adresini ilerlet
-        current_text_addr += len(obj['text']) * 4
-        # Eğer data eklendiyse data adresini de ilerlet (4 byte hizalı)
-        current_data_addr += len(obj.get('data', [])) * 4 
+        # --- Relocation'ları global listeye ekle (adres offset'i düzelt) ---
+        for reloc in obj['relocations']:
+            global_reloc = {**reloc, 'address': reloc['address'] + base_addr}
+            merged_relocs.append(global_reloc)
+            print(f"    Relocation: {reloc['type']} → '{reloc['symbol']}' "
+                  f"@ 0x{global_reloc['address']:04X}")
 
-    return merged_text, merged_data, merged_symbols, merged_relocs, file_offsets
+        # --- Text section'ı birleştir ---
+        merged_text.extend(obj['text'])
+        current_address += len(obj['text']) * 4
+        print(f"    {len(obj['text'])} komut eklendi "
+              f"(0x{base_addr:04X} – 0x{current_address-4:04X})")
+
+    return merged_text, merged_symbols, merged_relocs, file_offsets
+
 
 # =========================================================
 # ADIM 2: Relocation'ları çöz (patch)
@@ -181,13 +180,7 @@ def resolve_relocations(merged_text, merged_symbols, merged_relocs):
         patched_instr, _ = binary_res
         merged_text[instr_index] = patched_instr
 
-        offset = target_addr - (address + 4)
-        
-        if offset % 2 != 0:
-            raise Exception(f"Unaligned branch target: {symbol} (offset={offset})")
-
-        if offset < -2048 or offset > 2047:
-            raise Exception(f"Branch out of range: {symbol}, offset={offset}")
+        offset = target_addr - address
         print(f"    ✓ [{instr_index:3d}] 0x{address:04X}  {opcode:<6} "
               f"'{symbol}' → 0x{target_addr:04X}  (offset: {offset:+d})")
 
@@ -198,23 +191,20 @@ def resolve_relocations(merged_text, merged_symbols, merged_relocs):
 # ADIM 3: Çıktı dosyasına yaz
 # =========================================================
 
-def write_output(merged_text, merged_data, output_path, hex_mode):
+def write_output(merged_text, output_path, hex_mode=True):
+    """
+    Final komut listesini dosyaya yazar.
+    hex_mode=True  → HEX  (FPGA için önerilen)
+    hex_mode=False → binary
+    """
     with open(output_path, 'w') as f:
-        # TEXT başlangıcı
-        f.write(f"@{TEXT_BASE:08X}\n")
         for instr in merged_text:
             line = _to_output(_to_binary(instr), hex_mode)
             f.write(line + '\n')
 
-        # DATA başlangıcı (Yönergedeki 'ayrıştırılmalıdır' maddesi için şart)
-        if merged_data:
-            f.write(f"@{DATA_BASE:08X}\n")
-            for data_val in merged_data:
-                line = _to_output(_to_binary(data_val), hex_mode)
-                f.write(line + '\n')
-
     print(f"\n[✓] Çıktı yazıldı: {output_path}  "
-          f"({len(merged_text)} komut, HEX format)")
+          f"({len(merged_text)} komut, "
+          f"{'HEX' if hex_mode else 'binary'} format)")
 
 
 # =========================================================
@@ -236,14 +226,15 @@ def link(object_files, output_path, hex_mode=True, verbose=False):
     print("=" * 50)
 
     # 1. Yükle ve birleştir
-    merged_text, merged_data ,merged_symbols, merged_relocs, file_offsets = \
+    merged_text, merged_symbols, merged_relocs, file_offsets = \
         load_and_merge(object_files)
 
     # 2. Relocation'ları çöz
     merged_text = resolve_relocations(merged_text, merged_symbols, merged_relocs)
 
     # 3. Çıktı yaz
-    write_output(merged_text, merged_data, output_path, hex_mode)
+    write_output(merged_text, output_path, hex_mode)
+
     # 4. Özet
     print("\n=== Linkleme Özeti ===")
     print(f"  Dosyalar     : {', '.join(object_files)}")

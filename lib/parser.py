@@ -51,22 +51,7 @@ def p_program_empty(p):
 # DIRECTIVE
 # =========================================================
 
-# =========================================================
-# DIRECTIVE (Genişletilmiş: Global ve External Destekli)
-# =========================================================
-
-# 1. Kelime içeren direktifler (.global TOPLA, .extern TOPLA)
-def p_statement_directive_symbol(p):
-    'statement : DIRECTIVE LABEL NEWLINE'
-    p[0] = {
-        'type': 'directive',
-        'directive': p[1],
-        'symbol': p[2],  # 'TOPLA' kelimesini burası yakalar
-        'lineno': p.lineno(1)
-    }
-
-# 2. Sayı içeren direktifler (.word 100, .org 0x10)
-def p_statement_directive_imm(p):
+def p_statement_directive(p):
     'statement : DIRECTIVE IMMEDIATE NEWLINE'
     p[0] = {
         'type': 'directive',
@@ -75,7 +60,6 @@ def p_statement_directive_imm(p):
         'lineno': p.lineno(1)
     }
 
-# 3. Tek başına duran direktifler (.text, .data)
 def p_statement_directive_single(p):
     'statement : DIRECTIVE NEWLINE'
     p[0] = {
@@ -84,6 +68,7 @@ def p_statement_directive_single(p):
         'value': None,
         'lineno': p.lineno(1)
     }
+
 
 # =========================================================
 # R TYPE
