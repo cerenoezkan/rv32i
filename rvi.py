@@ -1,171 +1,168 @@
-import tkinter as tk
-from tkinter import filedialog, messagebox, scrolledtext, ttk
-import os
-import sys
-import io
+# rvi.py
+# Kullanıcı Arayüzü
+# Mod 1 — Sadece derle  : python rvi.py program.asm -x -es
+# Mod 2 — Derle + Linkle: python rvi.py main1.asm main2.asm --link -o output.hex -x
 
-# Mevcut modülleri içe aktarıyoruz
-from lib.parser import parse_input, reset_lineno
+from lib.parser import parse_input, reset_lineno, parser as ply_parser
 from lib.object_writer import write_object_file
-from linker import link
+import argparse
+import os
 
-VERSION = "1.0 - Academic Edition (Final)"
+VERSION = 0.2
 
-# Terminal çıktılarını GUI'ye yönlendirmek için yardımcı sınıf
-class TerminalToGUI:
-    def __init__(self, text_widget):
-        self.text_widget = text_widget
 
-    def write(self, string):
-        self.text_widget.insert(tk.END, string)
-        self.text_widget.see(tk.END)
+def get_arguments():
+    descr = f"\n    RVI v{VERSION}\n    - RV32I Assembler + Linker\n    "
+    ap = argparse.ArgumentParser(description=descr)
 
-    def flush(self):
-        pass
+    ap.add_argument("INFILES", nargs='+',
+                    help="Bir veya daha fazla .asm dosyası.")
+    ap.add_argument('-o', "--outfile", default='output.hex',
+                    help="Çıktı dosyası adı (default: output.hex).")
+    ap.add_argument('--link', action="store_true",
+                    help="Derleme sonrası tüm .o dosyalarını linkle.")
+    ap.add_argument('-e',  "--echo",         action="store_true",
+                    help="Üretilen kodu terminale yaz.")
+    ap.add_argument('-nc', "--no-color",     action="store_true",
+                    help="Renksiz çıktı.")
+    ap.add_argument('-n32',"--no-32",        action="store_true",
+                    help="32-bit uyarılarını kapat.")
+    ap.add_argument('-x',  "--hex",          action="store_true",
+                    help="HEX formatında çıktı.")
+    ap.add_argument('-t',  "--tokenize",     action="store_true",
+                    help="Token debug çıktısı.")
+    ap.add_argument("-es", "--echo-symbols", action="store_true",
+                    help="Sembol tablosunu göster.")
 
-class RVI_Ultimate_GUI:
-    def __init__(self, root):
-        self.root = root
-        self.root.title(f"RVI: RV32I Linker System - {VERSION}")
-        self.root.geometry("1000x750")
-        self.root.configure(bg="#f4f4f9")
-        
-        self.files_to_process = []
-        self.setup_ui()
+    return ap.parse_args()
 
-    def setup_ui(self):
-        # --- ÜST PANEL (BANNER) ---
-        banner = tk.Frame(self.root, bg="#2c3e50", height=80)
-        banner.pack(fill=tk.X)
-        
-        tk.Label(banner, text="RVI LINKER & ASSEMBLER SYSTEM", fg="#ecf0f1", bg="#2c3e50", 
-                 font=('Segoe UI', 18, 'bold')).pack(pady=10)
 
-        # --- KONTROL PANELİ ---
-        ctrl_frame = tk.Frame(self.root, bg="#f4f4f9")
-        ctrl_frame.pack(pady=15)
+# =========================================================
+# MOD 1: Tek dosya derle
+# =========================================================
 
-        tk.Button(ctrl_frame, text="📁 .asm Dosyaları Ekle", command=self.select_files, 
-                  bg="#3498db", fg="white", font=('Segoe UI', 10, 'bold'), 
-                  relief=tk.FLAT, padx=20, pady=8).grid(row=0, column=0, padx=10)
+def assemble_file(infile, args):
+    """
+    Bir .asm dosyasını derler, .o dosyasını yazar.
+    Dönüş: oluşturulan .o dosyasının adı
+    """
+    print(f"\n{'='*50}")
+    print(f"Derleniyor: {infile}")
+    print(f"{'='*50}")
 
-        tk.Button(ctrl_frame, text="🚀 Derle ve Linkle (Run)", command=self.run_process, 
-                  bg="#27ae60", fg="white", font=('Segoe UI', 10, 'bold'), 
-                  relief=tk.FLAT, padx=20, pady=8).grid(row=0, column=1, padx=10)
+    result = parse_input(infile, **{
+        'outfile':      args.outfile if not args.link else None,
+        'hex':          args.hex,
+        'echo_symbols': args.echo_symbols,
+    })
 
-        tk.Button(ctrl_frame, text="🧹 Sistemi Temizle", command=self.clear_all, 
-                  bg="#e74c3c", fg="white", font=('Segoe UI', 10, 'bold'), 
-                  relief=tk.FLAT, padx=20, pady=8).grid(row=0, column=2, padx=10)
+    text    = result['text']
+    data    = result['data']
+    symbols = result['symbols']
+    relocs  = result['relocations']
 
-        # --- SEKMELİ ANA GÖVDE ---
-        self.notebook = ttk.Notebook(self.root)
-        self.notebook.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
+    # .o dosyasını yaz
+    obj_filename = write_object_file(infile, text, data, symbols, relocs)
 
-        # Sekme 1: Teknik İşlem Günlüğü (Terminal gibi davranır)
-        self.tab_log = tk.Frame(self.notebook)
-        self.txt_log = scrolledtext.ScrolledText(self.tab_log, bg="#1e1e1e", fg="#00ff00", 
-                                               font=('Consolas', 10), insertbackground="white")
-        self.txt_log.pack(fill=tk.BOTH, expand=True)
-        self.notebook.add(self.tab_log, text=" 📝 Teknik İşlem Günlüğü ")
+    # Echo
+    if args.echo:
+        print("\n=== Üretilen Kod ===")
+        for i, instr in enumerate(text):
+            print(f"  [0x{i*4:04X}]  {instr}")
 
-        # Sekme 2: Global Sembol Tablosu
-        self.tab_sym = tk.Frame(self.notebook)
-        columns = ("Label", "Address", "Status")
-        self.tree_sym = ttk.Treeview(self.tab_sym, columns=columns, show='headings')
-        self.tree_sym.heading("Label", text="Sembol (Etiket)")
-        self.tree_sym.heading("Address", text="Bellek Adresi (Hex)")
-        self.tree_sym.heading("Status", text="Durum")
-        self.tree_sym.column("Label", anchor=tk.CENTER)
-        self.tree_sym.column("Address", anchor=tk.CENTER)
-        self.tree_sym.column("Status", anchor=tk.CENTER)
-        self.tree_sym.pack(fill=tk.BOTH, expand=True)
-        self.notebook.add(self.tab_sym, text=" 🔍 Global Sembol Tablosu ")
+    # Tokenizer debug
+    if args.tokenize:
+        print("\n=== Tokenized Instructions ===")
+        with open(infile, 'r') as f:
+            reset_lineno()
+            for line in f:
+                if not line.strip():
+                    continue
+                res = ply_parser.parse(line)
+                if res:
+                    print(f"  {res}")
 
-        # Sekme 3: Final HEX Çıktısı
-        self.tab_hex = tk.Frame(self.notebook)
-        self.txt_hex = scrolledtext.ScrolledText(self.tab_hex, bg="white", fg="#2c3e50", 
-                                               font=('Courier New', 12, 'bold'))
-        self.txt_hex.pack(fill=tk.BOTH, expand=True)
-        self.notebook.add(self.tab_hex, text=" 💾 Final HEX (FPGA) ")
+    # Sembol tablosu
+    if args.echo_symbols and symbols:
+        print(f"\n=== Sembol Tablosu — {infile} ===")
+        print(f"  {'Label':<12} {'Adres':<8} Hex")
+        for label, addr in symbols.items():
+            print(f"  {label:<12} {addr:<8} 0x{addr:04X}")
 
-    def log(self, msg):
-        self.txt_log.insert(tk.END, msg + "\n")
-        self.txt_log.see(tk.END)
-        self.root.update_idletasks()
+    # Relocation uyarısı
+    if relocs:
+        print(f"\n  [!] {len(relocs)} external sembol → linker gerekli")
+        for r in relocs:
+            print(f"      0x{r['address']:04X}  {r['type']:<6} → {r['symbol']}")
 
-    def select_files(self):
-        files = filedialog.askopenfilenames(filetypes=[("Assembly Files", "*.asm")])
-        if files:
-            for f in files:
-                if f not in self.files_to_process:
-                    self.files_to_process.append(f)
-                    self.log(f"[DOSYA EKLENDİ] {os.path.basename(f)}")
+    return obj_filename
 
-    def clear_all(self):
-        self.files_to_process = []
-        self.txt_log.delete('1.0', tk.END)
-        self.txt_hex.delete('1.0', tk.END)
-        for item in self.tree_sym.get_children():
-            self.tree_sym.delete(item)
-        self.log("Sistem sıfırlandı. Yeni projeler için hazır.")
 
-    def run_process(self):
-        if not self.files_to_process:
-            messagebox.showwarning("Uyarı", "İşlem yapılacak .asm dosyası bulunamadı!")
-            return
+# =========================================================
+# MOD 2: Derle + Linkle
+# =========================================================
 
-        self.txt_log.delete('1.0', tk.END)
-        self.txt_hex.delete('1.0', tk.END)
-        for item in self.tree_sym.get_children():
-            self.tree_sym.delete(item)
+def assemble_and_link(infiles, args):
+    """
+    Tüm .asm dosyalarını sırayla derler, ardından linker ile birleştirir.
+    """
+    from linker import link
 
-        # Terminal çıktılarını yakalamaya başla
-        old_stdout = sys.stdout
-        sys.stdout = TerminalToGUI(self.txt_log)
+    # 1. Her dosyayı derle
+    obj_files = []
+    for infile in infiles:
+        if not os.path.isfile(infile):
+            print(f"[HATA] Dosya bulunamadı: '{infile}'")
+            continue
+        obj_file = assemble_file(infile, args)
+        obj_files.append(obj_file)
 
-        try:
-            print("="*70)
-            print(" RVI RV32I LINKER & ASSEMBLER - AKADEMİK ANALİZ RAPORU")
-            print("="*70)
-            
-            obj_files = []
-            
-            # --- 1. ADIM: ASSEMBLE ---
-            print("\n>>> ASSEMBLE AŞAMASI BAŞLADI")
-            for asm_file in self.files_to_process:
-                print(f"İşleniyor: {os.path.basename(asm_file)}...")
-                res = parse_input(asm_file, hex=True)
-                obj_file = write_object_file(asm_file, res['text'], res['data'], res['symbols'], res['relocations'])
-                obj_files.append(obj_file)
+    if not obj_files:
+        print("[HATA] Hiç .o dosyası üretilemedi.")
+        return
 
-            # --- 2. ADIM: LINKING ---
-            print("\n>>> LINKING AŞAMASI BAŞLADI (Relocation Çözülüyor)")
-            output_hex = "output.hex"
-            merged_symbols = link(object_files=obj_files, output_path=output_hex, hex_mode=True)
-            
-            # Sembol Tablosunu Doldur
-            for sym, addr in merged_symbols.items():
-                self.tree_sym.insert("", tk.END, values=(sym, f"0x{addr:04X}", "RESOLVED"))
+    # 2. Linkle
+    print(f"\n{'='*50}")
+    print(f"Linkleniyor: {' + '.join(obj_files)}")
+    print(f"{'='*50}")
 
-            # --- 3. ADIM: FINAL ÇIKTI ---
-            with open(output_hex, 'r') as hf:
-                hex_content = hf.read()
-                self.txt_hex.insert(tk.END, hex_content)
-            
-            print("\n[BAŞARILI] Linkleme tamamlandı. Final adreslemeler yapıldı.")
-            print(f"Toplam Program Uzunluğu: {len(hex_content.splitlines()) * 4} Byte")
-            
-            messagebox.showinfo("Başarılı", "Linkleme başarıyla tamamlandı!")
+    merged_symbols = link(
+        object_files=obj_files,
+        output_path=args.outfile,
+        hex_mode=args.hex,
+    )
 
-        except Exception as e:
-            print(f"\n[HATA] {str(e)}")
-            messagebox.showerror("Sistem Hatası", str(e))
-        
-        finally:
-            # Terminali normale döndür
-            sys.stdout = old_stdout
+    # 3. Özet
+    print(f"\n{'='*50}")
+    print(f"Tamamlandı!")
+    print(f"  Girdi    : {', '.join(infiles)}")
+    print(f"  Çıktı    : {args.outfile}")
+    print(f"  Semboller: {merged_symbols}")
+    print(f"{'='*50}")
 
-if __name__ == "__main__":
-    root = tk.Tk()
-    app = RVI_Ultimate_GUI(root)
-    root.mainloop()
+
+# =========================================================
+# ANA FONKSİYON
+# =========================================================
+
+def main():
+    args = get_arguments()
+
+    if args.link:
+        # Mod 2: Derle + Linkle
+        if len(args.INFILES) < 2:
+            print("[UYARI] --link modu için en az 2 .asm dosyası önerilir.")
+            print("         Tek dosyayla devam ediliyor...")
+        assemble_and_link(args.INFILES, args)
+
+    else:
+        # Mod 1: Sadece derle (her dosya için ayrı ayrı)
+        for infile in args.INFILES:
+            if not os.path.isfile(infile):
+                print(f"[HATA] Dosya bulunamadı: '{infile}'")
+                continue
+            assemble_file(infile, args)
+
+
+if __name__ == '__main__':
+    main()
