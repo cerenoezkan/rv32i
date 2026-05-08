@@ -14,17 +14,11 @@ Kurulum
 
 Kullanım
 
-Assembly Dili Referansı
-
-Nesne Dosyası Formatı (Object File Format)
+Assembly Dili Referansı - Direktifler
 
 Linker Script
 
-FPGA Dağıtımı
-
 GUI
-
-Örnek: LED Sayacı
 
 İş Hattı Diyagramı (Pipeline Diagram)
 
@@ -64,6 +58,7 @@ Sistem; dosyalar arası sembol çözümleme, export/import deklarasyonları (.gl
 git clone https://github.com/<kullanici-adiniz>/rvi.git
 cd rvi
 
+
 ### Kullanım 
 
 - Mod 1 — Tek bir dosyayı derleme
@@ -75,18 +70,60 @@ cd rvi
 
 - Mod 2 — Çoklu dosyaları derleme + linkleme
 
-  python rvi.py main1.asm main2.asm --link -o output.hex -x
+  python rvi.py led_main.asm led_func.asm --link -o output.hex -x
+  
 
 - Sadece Linker (Mevcut .o dosyalarından)
 
-  python linker.py main1.o main2.o -o output.hex -x
+  python linker.py led_main.o led_func.o -o output.hex -x
 
-  python linker.py main1.o main2.o -o output.hex --linker-script link.ld
+  python linker.py led_main.o led_func.o -o output.hex --linker-script link.ld
+  
 
 - Varsayılan bir linker script oluşturma
 
    python linker.py --gen-ld
+  
 
 - Grafik Arayüz (GUI)
 
    python rvi_gui.py
+
+
+
+
+## Assembly Dili Referansı 
+
+### Direktifler 
+
+<img width="532" height="137" alt="image" src="https://github.com/user-attachments/assets/3c7c6792-952c-4579-a641-c90df85634c5" />
+
+
+
+
+## Linker Script 
+
+Temel adresleri ayarlamak için link.ld dosyasını düzenleyin:
+
+TEXT_BASE = 0x00000000;   # Kodun başlangıcı
+
+DATA_BASE = 0x00010000;   # Veri bölümünün başlangıcı
+
+
+
+
+## GUI 
+
+Grafiksel iş akışı için rvi_gui.py dosyasını çalıştırın:
+
+<img width="893" height="291" alt="image" src="https://github.com/user-attachments/assets/46b59f0f-f388-4669-b3a9-beccbca1f457" />
+
+
+
+
+
+
+## İş Hattı Diyagramı (Pipeline Diagram) 
+
+<img width="657" height="192" alt="image" src="https://github.com/user-attachments/assets/428877a4-e2d9-4231-9781-c1fc000f9dfa" />
+
