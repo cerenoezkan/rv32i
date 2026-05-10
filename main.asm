@@ -19,3 +19,5 @@ MAIN:
     jal x10, TOPLA   # TOPLA fonksiyonunu çağır
 
     addi x5, x0, 1   # Program sonu için örnek işlem
+
+    

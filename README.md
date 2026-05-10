@@ -23,6 +23,8 @@ GUI
 İş Hattı Diyagramı (Pipeline Diagram)
 
 ## Genel Bakış
+<img width="1536" height="1024" alt="ChatGPT Image 10 May 2026 14_07_14" src="https://github.com/user-attachments/assets/ca33fee8-f89d-4278-b3e5-f7870f72d197" />
+
 RVI, RISC-V RV32I komut seti mimarisi için Python ile sıfırdan oluşturulmuş tam bir araç zinciridir (toolchain). .asm kaynak dosyalarını iki geçişli bir assembler aracılığıyla ikili nesne dosyalarına (.o) derler, birden fazla nesne dosyasını nihai bir .hex çıktısında birleştirir ve PicoRV32 işlemci çekirdeğini kullanarak gerçek FPGA donanımını hedefler.
 
 Sistem; dosyalar arası sembol çözümleme, export/import deklarasyonları (.globl / .extern), relocation yamaları (patching) ve özel bellek yerleşimleri için linker script desteği sunar. Kaynak koddan çalışan donanıma kadar tüm yaşam döngüsünü kapsar.
