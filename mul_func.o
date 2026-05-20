@@ -1,0 +1,26 @@
+{
+    "header": {
+        "type": "RVI_OBJECT",
+        "version": 2,
+        "entry_point": 0,
+        "source_file": "mul_func.asm",
+        "instr_count": 7
+    },
+    "text": [
+        "001080B3",
+        "03F0F093",
+        "001F41B7",
+        "00018193",
+        "FFF18193",
+        "FE019EE3",
+        "00050067"
+    ],
+    "data": [],
+    "symbols": {
+        "MUL_FUNC": 0,
+        "DELAY": 16
+    },
+    "exports": [],
+    "imports": [],
+    "relocations": []
+}
