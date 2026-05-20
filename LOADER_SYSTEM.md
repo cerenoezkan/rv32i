@@ -18,7 +18,7 @@ RVI projesi, kaynak koddan FPGA üzerinde çalışan programa kadar tam bir pipe
        │                                      ▲                          │
        │                                      │ UART 115200                │
        ▼                                      └──────────────────────────┘
-  LED @ 0x2000                                                         .hex
+  LED @ 0x2000 (3 adet, active-low)                                  .hex / .o
 ```
 
 ### Modül hiyerarşisi (FPGA)
@@ -108,7 +108,7 @@ CRC hesabı Python tarafında: `zlib.crc32(body) & 0xFFFFFFFF`
 
 - **Baud:** 115200 (varsayılan)
 - **Çerçeve:** 8N1
-- **Saat:** 100 MHz (`CLK_FREQ` parametresi)
+- **Saat:** 27 MHz (Tang Nano 9K onboard osilatör, `CLK_FREQ` parametresi)
 
 ---
 
@@ -117,7 +117,7 @@ CRC hesabı Python tarafında: `zlib.crc32(body) & 0xFFFFFFFF`
 | Adres aralığı | Boyut | Erişim |
 |---------------|--------|--------|
 | `0x0000_0000` – `0x0000_0FFF` | 4 KB | Program BRAM (loader + CPU) |
-| `0x0000_2000` | 32 bit | LED MMIO (`sw` → `led[15:0]`) |
+| `0x0000_2000` | 32 bit | LED MMIO (`sw` → `led_reg[2:0]`, pinler active-low) |
 | Diğer | — | Okuma `0`, yazma yok sayılır |
 
 ### Linker (FPGA)
@@ -143,15 +143,16 @@ PicoRV32 `STACKADDR = 0xFFC` (BRAM sonu).
 1. Derle + bağla:
    python rvi.py test_program_1.asm --link -o test1.hex -x --linker-script link_fpga.ld
 
-2. Vivado:
+2. GowinEDA:
    - top.v + loader modülleri + picorv32.v ekle
-   - constraints/basys3_top.xdc uygula
-   - sentez / implement / bitstream
+   - constraints/tang_nano_9k.cst uygula
+   - sentez / place&route / bitstream üret
 
 3. FPGA'ya bitstream yükle (BRAM boş başlar)
 
 4. UART yükleme:
    python host_uploader.py test1.hex -p COM3
+   python host_uploader.py test_program_1.o -p COM3   # .o da desteklenir
 
 5. Gözlem:
    - test1: LED = 20 (0x14)
@@ -190,7 +191,7 @@ pip install pyserial
 python host_uploader.py test1.hex -p COM3
 ```
 
-`btnC` basılı tutulursa CPU tekrar reset'e alınır ve yeni program yüklenebilir.
+`sys_rst_n` düşük (buton basılı) tutulursa CPU tekrar reset'e alınır ve yeni program yüklenebilir.
 
 ---
 
@@ -199,14 +200,14 @@ python host_uploader.py test1.hex -p COM3
 - **Yükleme sırasında:** `cpu_resetn = 0` → PicoRV32 durur
 - **loader_done sonrası:** `cpu_resetn = 1` → PC = `0x0000_0000` (`PROGADDR_RESET`)
 - **$readmemh kaldırıldı:** Program yalnızca UART loader ile BRAM'e yazılır
-- **btnC:** Kullanıcı reset; `force_reload` ile loader yeniden dinler
+- **sys_rst_n:** Kullanıcı reset (active-low); `force_reload` ile loader yeniden dinler
 
 ---
 
 ## 8. Tasarım İlkeleri
 
-- Tek clock domain (100 MHz)
-- Senkron reset (`btnC` / `sys_rst`)
+- Tek clock domain (27 MHz, Tang Nano 9K)
+- Senkron reset (`sys_rst_n` active-low → `sys_rst` active-high dahili)
 - Modüler dosya yapısı (her blok ayrı `.v`)
 - Assembler/linker Python kodu **değiştirilmedi** — yalnızca FPGA loader katmanı eklendi
 
@@ -226,7 +227,9 @@ link_fpga.ld
 test_program_1.asm
 test_program_2.asm
 test_program_3.asm
-mul_func.asm
-constraints/basys3_top.xdc
+constraints/tang_nano_9k.cst
+sim_tb.v
 LOADER_SYSTEM.md
 ```
+
+**Kaldırılan / kullanılmayan:** `memory.v` (yerine `bram_interface.v`), `constraints/basys3_top.xdc` (Vivado/Basys3).

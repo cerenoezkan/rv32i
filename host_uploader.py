@@ -42,6 +42,36 @@ def crc32_ieee(data: bytes) -> int:
     return zlib.crc32(data) & 0xFFFFFFFF
 
 
+def parse_object_file(path: str) -> dict:
+    """RVI .o (JSON) formatını okur → {byte_addr: value} döndürür"""
+    import json
+    with open(path, 'r', encoding='utf-8') as f:
+        obj = json.load(f)
+
+    mem = {}
+    text_base = obj['header'].get('entry_point', 0)
+    for i, instr_str in enumerate(obj['text']):
+        if len(instr_str) == 32 and all(c in '01' for c in instr_str):
+            word = int(instr_str, 2)
+        else:
+            word = int(instr_str, 16)
+        addr = text_base + i * 4
+        for b in range(4):
+            mem[addr + b] = (word >> (8 * b)) & 0xFF
+
+    data_base = 0x00000400
+    for i, word_str in enumerate(obj.get('data', [])):
+        if len(word_str) == 32 and all(c in '01' for c in word_str):
+            word = int(word_str, 2)
+        else:
+            word = int(word_str, 16)
+        addr = data_base + i * 4
+        for b in range(4):
+            mem[addr + b] = (word >> (8 * b)) & 0xFF
+
+    return mem
+
+
 def parse_verilog_hex(path: str) -> dict:
     """@adres satırlı Intel/Verilog hex → {byte_addr: value}"""
     mem = {}
@@ -122,7 +152,10 @@ def send_packet(ser, pkt: bytes, retries: int = 5) -> None:
 
 
 def upload(ser, hex_path: str, dry_run: bool = False) -> None:
-    mem = parse_verilog_hex(hex_path)
+    if hex_path.endswith('.o'):
+        mem = parse_object_file(hex_path)
+    else:
+        mem = parse_verilog_hex(hex_path)
     regions = coalesce_regions(mem)
     total_bytes = sum(len(d) for _, d in regions)
     print(f"[+] {hex_path}: {len(regions)} bölge, {total_bytes} bayt")
@@ -137,6 +170,7 @@ def upload(ser, hex_path: str, dry_run: bool = False) -> None:
                 addr += len(chunk)
                 continue
             send_packet(ser, pkt)
+            time.sleep(0.005)
             addr += len(chunk)
 
     if not dry_run:
@@ -148,7 +182,7 @@ def upload(ser, hex_path: str, dry_run: bool = False) -> None:
 
 def main():
     ap = argparse.ArgumentParser(description="RVI UART FPGA program yükleyici")
-    ap.add_argument("hexfile", help="Linker çıktısı (.hex)")
+    ap.add_argument("hexfile", help="Linker çıktısı (.hex veya .o)")
     ap.add_argument("-p", "--port", default=None, help="Seri port (COM3, /dev/ttyUSB0)")
     ap.add_argument("-b", "--baud", type=int, default=DEFAULT_BAUD)
     ap.add_argument("--dry-run", action="store_true", help="UART açmadan paketleri listele")

@@ -14,7 +14,7 @@ LOOP:
     andi x1, x1, 15      # 0..15
     sw   x1, 0(x5)
 
-    lui  x3, 80          # dış gecikme
+    lui  x3, 500         # dış gecikme (27 MHz'de yavas blink)
     addi x3, x3, 0
 
 OUTER:

@@ -1,10 +1,11 @@
 // sim_tb.v
 // ---------------------------------------------------------------------------
-// Vivado simülasyon testbench — UART loader doğrulama
+// Gowin / Modelsim simülasyon testbench — UART loader doğrulama
+// Tang Nano 9K: 27 MHz sys_clk
 //
 // Senaryo:
-//   - btnC: 100 ns boyunca 1 (reset), sonra 0
-//   - uart_rxd üzerinden tek paket + oturum sonu
+//   - sys_rst_n: 100 ns boyunca 0 (reset, active-low), sonra 1
+//   - uart_rx hattına tek paket + oturum sonu
 //   - loader_done gözlemi (10 ms)
 // ---------------------------------------------------------------------------
 
@@ -12,65 +13,60 @@
 
 module sim_tb;
 
-    localparam integer CLK_HZ      = 100_000_000;
+    localparam integer CLK_HZ      = 27_000_000;
     localparam integer BAUD        = 115200;
-    localparam integer CLK_PERIOD  = 10;          // ns
-    localparam integer BIT_CLKS    = CLK_HZ / BAUD;
+    localparam integer CLK_PERIOD  = 37;          // ns (~27 MHz)
+    localparam integer BIT_CLKS    = CLK_HZ / BAUD;  // 234
 
-    reg        clk = 1'b0;
-    reg        btnC = 1'b1;
-    reg        uart_rxd = 1'b1;
-    wire       uart_txd;
-    wire [15:0] led;
+    reg        sys_clk = 1'b0;
+    reg        sys_rst_n = 1'b0;
+    reg        uart_rx = 1'b1;
+    wire       uart_tx;
+    wire [2:0] led;
 
     reg [7:0] pkt [0:17];
 
     top u_dut (
-        .clk     (clk),
-        .btnC    (btnC),
-        .uart_rxd(uart_rxd),
-        .uart_txd(uart_txd),
-        .led     (led)
+        .sys_clk   (sys_clk),
+        .sys_rst_n (sys_rst_n),
+        .uart_rx   (uart_rx),
+        .uart_tx   (uart_tx),
+        .led       (led)
     );
 
     wire loader_done = u_dut.u_loader.loader_done;
     wire loader_active = u_dut.u_loader.loader_active;
 
-    always #(CLK_PERIOD / 2) clk = ~clk;
+    always #(CLK_PERIOD / 2) sys_clk = ~sys_clk;
 
-    // 8N1 UART bayt gönderimi (uart_rxd hattına)
     task automatic uart_send_byte(input [7:0] data);
         integer i;
         begin
-            uart_rxd = 1'b0;  // start
-            repeat (BIT_CLKS) @(posedge clk);
+            uart_rx = 1'b0;
+            repeat (BIT_CLKS) @(posedge sys_clk);
 
             for (i = 0; i < 8; i = i + 1) begin
-                uart_rxd = data[i];
-                repeat (BIT_CLKS) @(posedge clk);
+                uart_rx = data[i];
+                repeat (BIT_CLKS) @(posedge sys_clk);
             end
 
-            uart_rxd = 1'b1;  // stop
-            repeat (BIT_CLKS) @(posedge clk);
+            uart_rx = 1'b1;
+            repeat (BIT_CLKS) @(posedge sys_clk);
         end
     endtask
 
     initial begin
-        $display("=== sim_tb: UART loader testi basladi ===");
+        $display("=== sim_tb: UART loader testi basladi (27 MHz) ===");
 
-        // Reset: btnC aktif-yuksek (top.sys_rst = btnC)
-        btnC = 1'b1;
-        uart_rxd = 1'b1;
+        // Reset: sys_rst_n active-low (0 = basili)
+        sys_rst_n = 1'b0;
+        uart_rx   = 1'b1;
         #(100);
-        btnC = 1'b0;
-        $display("[TB] btnC serbest @ %0t ns", $time);
+        sys_rst_n = 1'b1;
+        $display("[TB] sys_rst_n serbest @ %0t ns", $time);
 
-        // UART modulunun hazir olmasi icin kisa bekleme
-        repeat (2000) @(posedge clk);
+        repeat (2000) @(posedge sys_clk);
 
-        // Paket: [AA 55][addr LE][size LE][data][crc32 LE][AA 56]
-        // addr=0x00000000, size=4, data=13 00 00 00 (addi x0,x0,0 / nop)
-        // CRC32(addr||size||data) = 0x3AB7D211 (IEEE, zlib uyumlu)
         pkt[0]=8'hAA;  pkt[1]=8'h55;
         pkt[2]=8'h00;  pkt[3]=8'h00;
         pkt[4]=8'h00;  pkt[5]=8'h00;
@@ -88,7 +84,7 @@ module sim_tb;
 
         $display("[TB] UART paketi gonderildi @ %0t ns", $time);
 
-        // loader_done bekle (en fazla 5 ms)
+        // fork/join_any: Modelsim ve Gowin sim ile uyumlu
         fork
             begin
                 wait (loader_done === 1'b1);
@@ -103,7 +99,6 @@ module sim_tb;
         join_any
         disable fork;
 
-        // Toplam sim sure: 10 ms
         #10_000_000;
         $display("[TB] Simulasyon bitti @ %0t ns, loader_done=%b", $time, loader_done);
         $finish;

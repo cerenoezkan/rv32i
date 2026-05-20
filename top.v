@@ -1,18 +1,18 @@
 // top.v
-// PicoRV32 + BRAM + LED + UART runtime loader (Basys 3, 100 MHz)
+// PicoRV32 + BRAM + LED + UART runtime loader (Tang Nano 9K, 27 MHz)
 
 module top (
-    input         clk,
-    input         btnC,
-    input         uart_rxd,
-    output        uart_txd,
-    output [15:0] led
+    input         sys_clk,
+    input         sys_rst_n,
+    input         uart_rx,
+    output        uart_tx,
+    output [ 2:0] led
 );
 
-    localparam CLK_FREQ  = 100_000_000;
+    localparam CLK_FREQ  = 27_000_000;
     localparam BAUD_RATE = 115200;
 
-    wire sys_rst = btnC;
+    wire sys_rst = ~sys_rst_n;
 
     // --- UART RX ---
     wire       rx_empty, rx_full;
@@ -23,9 +23,9 @@ module top (
         .CLK_FREQ (CLK_FREQ),
         .BAUD_RATE(BAUD_RATE)
     ) u_uart_rx (
-        .clk       (clk),
+        .clk       (sys_clk),
         .rst       (sys_rst),
-        .rxd       (uart_rxd),
+        .rxd       (uart_rx),
         .fifo_empty(rx_empty),
         .fifo_full (rx_full),
         .fifo_dout (rx_data),
@@ -41,12 +41,12 @@ module top (
         .CLK_FREQ (CLK_FREQ),
         .BAUD_RATE(BAUD_RATE)
     ) u_uart_tx (
-        .clk     (clk),
+        .clk     (sys_clk),
         .rst     (sys_rst),
         .tx_data (ldr_tx_data),
         .tx_start(ldr_tx_start),
         .tx_busy (tx_busy),
-        .txd     (uart_txd)
+        .txd     (uart_tx)
     );
 
     // --- Loader ---
@@ -58,7 +58,7 @@ module top (
     wire       entry_pc_load;
 
     loader_fsm u_loader (
-        .clk           (clk),
+        .clk           (sys_clk),
         .rst           (sys_rst),
         .rx_empty      (rx_empty),
         .rx_data       (rx_data),
@@ -84,9 +84,9 @@ module top (
     cpu_control #(
         .DEFAULT_ENTRY_PC(32'h0000_0000)
     ) u_cpu_ctrl (
-        .clk           (clk),
+        .clk           (sys_clk),
         .rst           (sys_rst),
-        .btnC          (btnC),
+        .sys_rst_n     (sys_rst_n),
         .loader_done   (loader_done),
         .loader_active (loader_active),
         .entry_pc_in   (entry_pc),
@@ -110,7 +110,7 @@ module top (
         .ENABLE_DIV(0),
         .BARREL_SHIFTER(1)
     ) cpu (
-        .clk       (clk),
+        .clk       (sys_clk),
         .resetn    (cpu_resetn),
         .mem_valid (mem_valid),
         .mem_instr (mem_instr),
@@ -126,7 +126,7 @@ module top (
     wire        bram_ready;
 
     bram_interface u_bram (
-        .clk       (clk),
+        .clk       (sys_clk),
         .rst       (sys_rst),
         .cpu_valid (mem_valid),
         .cpu_addr  (mem_addr),
@@ -146,26 +146,26 @@ module top (
     wire bram_sel = (mem_addr[31:12] == 20'h00000);
     wire led_sel  = (mem_addr == 32'h0000_2000);
 
-    reg [15:0] led_reg = 16'h0000;
-    assign led = led_reg;
+    reg [2:0] led_reg = 3'b000;
+    assign led = ~led_reg;
 
     always @(*) begin
         if (bram_sel)
             mem_rdata = bram_rdata;
         else if (led_sel)
-            mem_rdata = {16'h0000, led_reg};
+            mem_rdata = {29'h0000_0000, led_reg};
         else
             mem_rdata = 32'h0000_0000;
     end
 
-    always @(posedge clk) begin
+    always @(posedge sys_clk) begin
         mem_ready <= 1'b0;
         if (cpu_resetn && mem_valid) begin
             if (bram_sel)
                 mem_ready <= bram_ready;
             else if (led_sel) begin
                 if (mem_wstrb != 4'b0000)
-                    led_reg <= mem_wdata[15:0];
+                    led_reg <= mem_wdata[2:0];
                 mem_ready <= 1'b1;
             end else
                 mem_ready <= 1'b1;

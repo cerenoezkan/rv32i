@@ -5,7 +5,7 @@
 // ---------------------------------------------------------------------------
 
 module uart_tx #(
-    parameter integer CLK_FREQ  = 100_000_000,
+    parameter integer CLK_FREQ  = 27_000_000,
     parameter integer BAUD_RATE = 115200
 ) (
     input  wire       clk,

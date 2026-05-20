@@ -131,8 +131,10 @@ module loader_fsm #(
                     else
                         loader_active <= 1'b0;
                     if (!rx_empty && rx_data == SYNC_B0) begin
-                        rx_rd <= 1'b1;
-                        state <= S_WAIT_HEADER;
+                        rx_rd          <= 1'b1;
+                        loader_done    <= 1'b0;
+                        loader_active  <= 1'b1;
+                        state          <= S_WAIT_HEADER;
                     end
                 end
 
@@ -244,8 +246,8 @@ module loader_fsm #(
                         if (!tx_busy) begin
                             tx_data  <= RESP_ACK;
                             tx_start <= 1'b1;
+                            state    <= S_NEXT_PACKET;
                         end
-                        state <= S_NEXT_PACKET;
                     end
                 end
 
