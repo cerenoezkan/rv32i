@@ -93,6 +93,10 @@ module top (
 
     // -----------------------------------------------------------------------
     // CPU Kontrol
+    // DÜZELTİLDİ: sys_rst_n bağlandı (cpu_control bunu koşulda kullanıyor:
+    //   cpu_resetn = pwr_done && loader_done && sys_rst_n && !loader_active
+    //   Bağlanmadan bırakılırsa sys_rst_n=Z → cpu_resetn hiç 1 olmaz → CPU başlamaz)
+    // entry_pc çıkışı bu projede kullanılmıyor → açık bırakıldı: .entry_pc()
     // -----------------------------------------------------------------------
     wire cpu_resetn;
 
@@ -101,14 +105,13 @@ module top (
     ) u_cpu_ctrl (
         .clk          (sys_clk),
         .rst          (sys_rst),
-        .sys_rst_n    (sys_rst_n),     // KRİTİK DÜZELTME: btnC→sys_rst_n (aktif-low)
+        .sys_rst_n    (sys_rst_n),    // KRİTİK: bağlı olmalı
         .loader_done  (loader_done),
         .loader_active(loader_active),
         .entry_pc_in  (entry_pc),
         .entry_pc_load(entry_pc_load),
         .cpu_resetn   (cpu_resetn),
-        // entry_pc çıkışı cpu_control'da mevcut ama burada kullanılmıyor;
-        // loader_fsm'in entry_pc'si doğrudan cpu_control.entry_pc_in'e bağlı.
+        .entry_pc     (),             // kullanılmıyor, açık bırak
         .force_loader (force_reload)
     );
 
@@ -122,10 +125,10 @@ module top (
     wire [ 3:0] mem_wstrb;
 
     picorv32 #(
-        .STACKADDR    (32'h0000_0FFC),   // BRAM sonu
+        .STACKADDR     (32'h0000_0FFC),  // BRAM sonu
         .PROGADDR_RESET(32'h0000_0000),  // PC başlangıcı
-        .ENABLE_MUL   (0),
-        .ENABLE_DIV   (0),
+        .ENABLE_MUL    (0),
+        .ENABLE_DIV    (0),
         .BARREL_SHIFTER(1)
     ) u_cpu (
         .clk      (sys_clk),
@@ -166,11 +169,11 @@ module top (
     // -----------------------------------------------------------------------
     // Adres çözümleme & mem_ready / mem_rdata
     // -----------------------------------------------------------------------
-    wire bram_sel = (mem_addr[31:12] == 20'h00000);   // 0x0000_0000..0x0000_0FFF
-    wire led_sel  = (mem_addr == 32'h0000_2000);        // LED MMIO
+    wire bram_sel = (mem_addr[31:12] == 20'h00000);  // 0x0000_0000..0x0000_0FFF
+    wire led_sel  = (mem_addr == 32'h0000_2000);      // LED MMIO
 
     reg [2:0] led_reg;
-    assign led = ~led_reg;   // aktif-low: bit=1 → LED kapalı, bit=0 → LED açık
+    assign led = ~led_reg;  // aktif-low: 0=LED açık, 1=LED kapalı
 
     always @(*) begin
         if (bram_sel)
@@ -191,7 +194,7 @@ module top (
                     led_reg <= mem_wdata[2:0];
                 mem_ready <= 1'b1;
             end else begin
-                mem_ready <= 1'b1;   // bilinmeyen adres: takılma
+                mem_ready <= 1'b1;  // bilinmeyen adres: CPU takılmasın
             end
         end
     end
