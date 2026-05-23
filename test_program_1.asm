@@ -1,20 +1,28 @@
 # test_program_1.asm
-# Test 1: Temel Aritmetik (add, sub, addi)
-# Beklenen gözlem: LED[2:0] = 0b100 (decimal 4, yani x5=20'nin alt 3 biti)
-# Tang Nano 9K: 3 LED, aktif-low → LED[2]=açık, LED[1,0]=kapalı
+# Test 1: Arithmetic + Button Input (6 LED)
+# Normal: arithmetic result x5=5 -> LED[0]+LED[2] on
+# S1 short press: all 6 LEDs on
 
 .text
 .globl MAIN
 
 MAIN:
-    addi x1, x0, 10      # x1 = 10
-    addi x2, x0, 3       # x2 = 3
-    add  x3, x1, x2      # x3 = 13
-    sub  x4, x1, x2      # x4 = 7
-    add  x5, x3, x4      # x5 = 20 = 0b10100
+    addi x1, x0, 8
+    addi x2, x0, 3
+    add  x3, x1, x2      # x3 = 11
+    sub  x4, x3, x2      # x4 = 8
+    sub  x5, x4, x2      # x5 = 5 = 0b000101
+    lui  x6, 2            # x6 = 0x2000
+    addi x7, x6, 4        # x7 = 0x2004 button
 
-    lui  x6, 2            # x6 = 0x2000 (LED MMIO adresi)
-    sw   x5, 0(x6)        # LED = 20 → alt 3 bit = 0b100 → LED[2] açık
+LOOP:
+    lw   x8, 0(x7)        # read button (released=1, pressed=0)
+    beq  x8, x0, BTN_PRESSED
 
-HOLD:
-    jal  x0, HOLD         # sonsuz döngü — LED sabit yanar
+    sw   x5, 0(x6)        # LED = 5 = 0b000101
+    jal  x0, LOOP
+
+BTN_PRESSED:
+    addi x9, x0, 63       # 63 = 0b111111
+    sw   x9, 0(x6)        # all LEDs on
+    jal  x0, LOOP

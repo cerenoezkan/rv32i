@@ -1,29 +1,16 @@
-// top.v
-// PicoRV32 + BRAM + UART Loader — Tang Nano 9K (Gowin GW1NR-9C, 27 MHz)
-//
-// Port isimleri constraints/tang_nano_9k.cst ile birebir eşleşmeli.
-//
-// Bellek haritası:
-//   0x0000_0000 – 0x0000_0FFF : 4 KB BRAM (kod + veri)
-//   0x0000_2000               : LED MMIO (sw komutu ile yaz, alt 3 bit)
-
 module top (
-    input  wire       sys_clk,    // 27 MHz, pin 52
-    input  wire       sys_rst_n,  // aktif-LOW, S1 butonu, pin 4
-    input  wire       uart_rx,    // UART alım, pin 18
-    output wire       uart_tx,    // UART gönderim, pin 17
-    output wire [2:0] led         // aktif-LOW LED, pin 10/11/13
+    input  wire       sys_clk,
+    input  wire       sys_rst_n,
+    input  wire       uart_rx,
+    output wire       uart_tx,
+  output wire [5:0] led
 );
 
     localparam CLK_FREQ  = 27_000_000;
     localparam BAUD_RATE = 115200;
 
-    // aktif-low butonu → aktif-high iç reset
     wire sys_rst = ~sys_rst_n;
 
-    // -----------------------------------------------------------------------
-    // UART RX
-    // -----------------------------------------------------------------------
     wire       rx_empty, rx_full;
     wire [7:0] rx_data;
     wire       rx_rd;
@@ -41,9 +28,6 @@ module top (
         .fifo_rd_en (rx_rd)
     );
 
-    // -----------------------------------------------------------------------
-    // UART TX
-    // -----------------------------------------------------------------------
     wire       tx_busy;
     wire [7:0] ldr_tx_data;
     wire       ldr_tx_start;
@@ -60,9 +44,6 @@ module top (
         .txd     (uart_tx)
     );
 
-    // -----------------------------------------------------------------------
-    // Loader FSM
-    // -----------------------------------------------------------------------
     wire        ld_we, ld_wstrb, ld_ack;
     wire [31:0] ld_addr;
     wire [ 7:0] ld_wdata;
@@ -91,13 +72,6 @@ module top (
         .force_reload (force_reload)
     );
 
-    // -----------------------------------------------------------------------
-    // CPU Kontrol
-    // DÜZELTİLDİ: sys_rst_n bağlandı (cpu_control bunu koşulda kullanıyor:
-    //   cpu_resetn = pwr_done && loader_done && sys_rst_n && !loader_active
-    //   Bağlanmadan bırakılırsa sys_rst_n=Z → cpu_resetn hiç 1 olmaz → CPU başlamaz)
-    // entry_pc çıkışı bu projede kullanılmıyor → açık bırakıldı: .entry_pc()
-    // -----------------------------------------------------------------------
     wire cpu_resetn;
 
     cpu_control #(
@@ -105,19 +79,16 @@ module top (
     ) u_cpu_ctrl (
         .clk          (sys_clk),
         .rst          (sys_rst),
-        .sys_rst_n    (sys_rst_n),    // KRİTİK: bağlı olmalı
+        .sys_rst_n    (sys_rst_n),
         .loader_done  (loader_done),
         .loader_active(loader_active),
         .entry_pc_in  (entry_pc),
         .entry_pc_load(entry_pc_load),
         .cpu_resetn   (cpu_resetn),
-        .entry_pc     (),             // kullanılmıyor, açık bırak
+        .entry_pc     (),
         .force_loader (force_reload)
     );
 
-    // -----------------------------------------------------------------------
-    // PicoRV32
-    // -----------------------------------------------------------------------
     wire        mem_valid, mem_instr;
     reg         mem_ready;
     wire [31:0] mem_addr, mem_wdata;
@@ -125,8 +96,8 @@ module top (
     wire [ 3:0] mem_wstrb;
 
     picorv32 #(
-        .STACKADDR     (32'h0000_0FFC),  // BRAM sonu
-        .PROGADDR_RESET(32'h0000_0000),  // PC başlangıcı
+        .STACKADDR     (32'h0000_0FFC),
+        .PROGADDR_RESET(32'h0000_0000),
         .ENABLE_MUL    (0),
         .ENABLE_DIV    (0),
         .BARREL_SHIFTER(1)
@@ -142,9 +113,6 @@ module top (
         .mem_rdata(mem_rdata)
     );
 
-    // -----------------------------------------------------------------------
-    // BRAM
-    // -----------------------------------------------------------------------
     wire [31:0] bram_rdata;
     wire        bram_ready;
 
@@ -166,35 +134,35 @@ module top (
         .dbg_rdata()
     );
 
-    // -----------------------------------------------------------------------
-    // Adres çözümleme & mem_ready / mem_rdata
-    // -----------------------------------------------------------------------
-    wire bram_sel = (mem_addr[31:12] == 20'h00000);  // 0x0000_0000..0x0000_0FFF
-    wire led_sel  = (mem_addr == 32'h0000_2000);      // LED MMIO
+    wire bram_sel = (mem_addr[31:12] == 20'h00000);
+    wire led_sel  = (mem_addr == 32'h0000_2000);
+    wire btn_sel  = (mem_addr == 32'h0000_2004);  // buton MMIO
 
-    reg [2:0] led_reg;
-    assign led = ~led_reg;  // aktif-low: 0=LED açık, 1=LED kapalı
+  reg [5:0] led_reg;
+    assign led = ~led_reg;
 
     always @(*) begin
         if (bram_sel)
             mem_rdata = bram_rdata;
         else if (led_sel)
-            mem_rdata = {29'h0, led_reg};
+            mem_rdata = {26'h0, led_reg};
+        else if (btn_sel)
+           mem_rdata = {31'h0, sys_rst_n};  // bırakılı=1, basılı=0 // basılı=1, bırakılı=0  // bırakılı=1, basılı=0
         else
-            mem_rdata = 32'h0000_0000;
+            mem_rdata = 32'h00000013;
     end
 
     always @(posedge sys_clk) begin
         mem_ready <= 1'b0;
-        if (cpu_resetn && mem_valid) begin
+        if (sys_rst) begin
+            led_reg <= 3'b000;
+        end else if (mem_valid) begin
             if (bram_sel) begin
                 mem_ready <= bram_ready;
-            end else if (led_sel) begin
-                if (|mem_wstrb)
-                    led_reg <= mem_wdata[2:0];
-                mem_ready <= 1'b1;
             end else begin
-                mem_ready <= 1'b1;  // bilinmeyen adres: CPU takılmasın
+                if (led_sel && mem_wstrb != 4'b0000)
+                    led_reg <= mem_wdata[5:0];  // 3 bit yerine 6 bit
+                mem_ready <= 1'b1;
             end
         end
     end

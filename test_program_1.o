@@ -1,0 +1,34 @@
+{
+    "header": {
+        "type": "RVI_OBJECT",
+        "version": 2,
+        "entry_point": 0,
+        "source_file": "test_program_1.asm",
+        "instr_count": 14
+    },
+    "text": [
+        "00800093",
+        "00300113",
+        "002081B3",
+        "40218233",
+        "402202B3",
+        "00002337",
+        "00430393",
+        "0003A403",
+        "00040663",
+        "00532023",
+        "FF5FF06F",
+        "03F00493",
+        "00932023",
+        "FE9FF06F"
+    ],
+    "data": [],
+    "symbols": {
+        "MAIN": 0,
+        "LOOP": 28,
+        "BTN_PRESSED": 44
+    },
+    "exports": [],
+    "imports": [],
+    "relocations": []
+}
