@@ -3,7 +3,7 @@ module top (
     input  wire       sys_rst_n,
     input  wire       uart_rx,
     output wire       uart_tx,
-  output wire [5:0] led
+    output wire [5:0] led
 );
 
     localparam CLK_FREQ  = 27_000_000;
@@ -13,7 +13,9 @@ module top (
 
     wire       rx_empty, rx_full;
     wire [7:0] rx_data;
-    wire       rx_rd;
+    wire       ldr_rx_rd;
+    wire       cpu_rx_rd = loader_done && !rx_empty && mem_valid && uart_data_sel && (mem_wstrb == 4'b0000);
+    wire       rx_rd = loader_done ? cpu_rx_rd : ldr_rx_rd;
 
     uart_rx #(
         .CLK_FREQ (CLK_FREQ),
@@ -56,7 +58,7 @@ module top (
         .rst          (sys_rst),
         .rx_empty     (rx_empty),
         .rx_data      (rx_data),
-        .rx_rd        (rx_rd),
+        .rx_rd        (ldr_rx_rd),
         .tx_data      (ldr_tx_data),
         .tx_start     (ldr_tx_start),
         .tx_busy      (tx_busy),
@@ -134,11 +136,31 @@ module top (
         .dbg_rdata()
     );
 
-    wire bram_sel = (mem_addr[31:12] == 20'h00000);
-    wire led_sel  = (mem_addr == 32'h0000_2000);
-    wire btn_sel  = (mem_addr == 32'h0000_2004);  // buton MMIO
+    wire bram_sel      = (mem_addr[31:12] == 20'h00000);
+    wire led_sel       = (mem_addr == 32'h0000_2000);
+    wire uart_data_sel = (mem_addr == 32'h0000_2008);
+    wire uart_rdy_sel  = (mem_addr == 32'h0000_200C);
 
-  reg [5:0] led_reg;
+    // UART RX register — cpu_rx_rd pulse sonrası veri stabil
+    reg [7:0] uart_data_reg;
+    reg       uart_data_valid;
+
+    always @(posedge sys_clk) begin
+        if (sys_rst) begin
+            uart_data_reg   <= 8'h00;
+            uart_data_valid <= 1'b0;
+        end else begin
+            if (cpu_rx_rd) begin
+                uart_data_reg   <= rx_data;
+                uart_data_valid <= 1'b1;
+            end
+            // CPU data okudu → valid sifirla
+            if (mem_valid && uart_data_sel && mem_wstrb == 4'b0000 && uart_data_valid)
+                uart_data_valid <= 1'b0;
+        end
+    end
+
+    reg [5:0] led_reg;
     assign led = ~led_reg;
 
     always @(*) begin
@@ -146,8 +168,10 @@ module top (
             mem_rdata = bram_rdata;
         else if (led_sel)
             mem_rdata = {26'h0, led_reg};
-        else if (btn_sel)
-           mem_rdata = {31'h0, sys_rst_n};  // bırakılı=1, basılı=0 // basılı=1, bırakılı=0  // bırakılı=1, basılı=0
+        else if (uart_data_sel)
+            mem_rdata = {24'h0, uart_data_reg};
+        else if (uart_rdy_sel)
+            mem_rdata = {31'h0, uart_data_valid};
         else
             mem_rdata = 32'h00000013;
     end
@@ -155,13 +179,13 @@ module top (
     always @(posedge sys_clk) begin
         mem_ready <= 1'b0;
         if (sys_rst) begin
-            led_reg <= 3'b000;
+            led_reg <= 6'b000000;
         end else if (mem_valid) begin
             if (bram_sel) begin
                 mem_ready <= bram_ready;
             end else begin
                 if (led_sel && mem_wstrb != 4'b0000)
-                    led_reg <= mem_wdata[5:0];  // 3 bit yerine 6 bit
+                    led_reg <= mem_wdata[5:0];
                 mem_ready <= 1'b1;
             end
         end

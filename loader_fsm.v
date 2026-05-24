@@ -236,35 +236,21 @@ module loader_fsm #(
 
                 // ----------------------------------------------------------
 
-                S_IDLE: begin
+S_IDLE: begin
+    loader_active <= !loader_done;
+    if (!rx_empty) begin  // loader_done kontrolü kaldırıldı
+        rx_rd <= 1'b1;
+        state <= S_IDLE_WAIT;
+    end
+end
 
-                    loader_active <= !loader_done;
-
-                    if (!rx_empty) begin
-
-                        rx_rd <= 1'b1;          // FIFO'dan oku
-
-                        state <= S_IDLE_WAIT;   // veri stabil olana bekle
-
-                    end
-
-                end
-
-
-
-                S_IDLE_WAIT: begin
-
-                    // rx_data artık stabil
-
-                    if (rx_data == SYNC_B0)
-
-                        state <= S_WAIT_HEADER;
-
-                    else
-
-                        state <= S_IDLE;        // yanlış byte
-
-                end
+S_IDLE_WAIT: begin
+    if (rx_data == SYNC_B0) begin
+        loader_done <= 1'b0;  // yeni yükleme başlıyor
+        state <= S_WAIT_HEADER;
+    end else
+        state <= S_IDLE;
+end
 
 
 
