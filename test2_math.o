@@ -1,0 +1,22 @@
+{
+    "header": {
+        "type": "RVI_OBJECT",
+        "version": 2,
+        "entry_point": 0,
+        "source_file": "test2_math.asm",
+        "instr_count": 2
+    },
+    "text": [
+        "00000000000101010000011000010011",
+        "00000000000011111000000001100111"
+    ],
+    "data": [],
+    "symbols": {
+        "INC_FUNC": 0
+    },
+    "exports": [
+        "INC_FUNC"
+    ],
+    "imports": [],
+    "relocations": []
+}
