@@ -32,13 +32,15 @@
     "exports": [
         "MAIN"
     ],
-    "imports": [],
+    "imports": [
+        "INC_FUNC"
+    ],
     "relocations": [
         {
             "symbol": "INC_FUNC",
             "address": 12,
             "type": "jal",
-            "extern": false,
+            "extern": true,
             "rd": "x31"
         }
     ]
